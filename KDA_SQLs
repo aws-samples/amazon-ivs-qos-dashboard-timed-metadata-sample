@@ -1,0 +1,31 @@
+CREATE OR REPLACE STREAM PLAYER_STATS (METRIC_TYPE VARCHAR(20), METRIC_UNIT VARCHAR(15), CLIENT_PLATFORM VARCHAR(10), SUMMARY DOUBLE);
+ CREATE OR REPLACE PUMP "STREAM_PUMP4" AS INSERT INTO "PLAYER_STATS"
+ -- SELECT STREAM "channel_watched", "client_platform", count(*)
+ -- FROM     "SOURCE_SQL_STREAM_001"
+ -- GROUP BY "channel_watched", "client_platform",
+ -- STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND)
+ SELECT STREAM 'ERRORS', 'Count', "client_platform", SUM("error_count")
+ FROM     "SOURCE_SQL_STREAM_001" where "metric_type"='PLAYBACK_SUMMARY'
+ GROUP BY "client_platform",
+ STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND)
+ UNION ALL
+ SELECT STREAM 'CONCURRENCY', 'Count', "client_platform", count(*)
+ FROM     "SOURCE_SQL_STREAM_001"
+ GROUP BY "client_platform",
+ STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND)
+ UNION ALL
+ -- average start up time in seconds
+ SELECT STREAM 'STARTUP_TIME', 'Seconds', "client_platform", AVG("startup_latency_ms")/1000
+ FROM     "SOURCE_SQL_STREAM_001" where "startup_latency_ms" > 0
+ GROUP BY "client_platform",
+ STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND)
+  UNION ALL
+SELECT STREAM 'BUFFER_RATIO', 'Percent', "client_platform", AVG("buffering_time_ms"/"playing_time_ms")*100
+ FROM     "SOURCE_SQL_STREAM_001"
+ GROUP BY "client_platform",
+ STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND)
+   UNION ALL
+SELECT STREAM 'LIVE_LATENCY', 'Seconds', "client_platform", AVG("live_latency_ms")/1000
+ FROM     "SOURCE_SQL_STREAM_001"
+ GROUP BY "client_platform",
+ STEP("SOURCE_SQL_STREAM_001".ROWTIME BY INTERVAL '60' SECOND);
