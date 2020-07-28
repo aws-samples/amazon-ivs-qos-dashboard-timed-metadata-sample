@@ -10,11 +10,10 @@ require('es6-promise').polyfill();
 require('isomorphic-fetch');
 const URL = require('url');
 const AWS = require('aws-sdk');
-var path = require('path');
 let region = process.env.AWS_REGION;
 // Create CloudWatch service object
 var cw = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
-var ivs = new AWS.IVS();
+var path = require('path');
 
 /* == Globals == */
 var esDomain = {
@@ -50,70 +49,32 @@ exports.handler = (event, context, callback) => {
         const jsonData = JSON.parse(recordData);
         console.log("data :%j", jsonData);
 
-        // const uri = URL.parse(GRAPHQL_ENDPOINT);
-        // console.log(uri.href);
-        // console.log("Region ", process.env.AWS_REGION);
+        const uri = URL.parse(GRAPHQL_ENDPOINT);
+        console.log(uri.href);
+        console.log("Region ", process.env.AWS_REGION);
 
         // postToES(JSON.stringify(jsonData), context);
 
         // Create parameters JSON for putMetricData
-        // var params = {
-        //     MetricData: [{
-        //         MetricName: jsonData.QUESTION.trim(),
-        //         Dimensions: [
-        //         //     {
-        //         //     Name: 'ChannelName',
-        //         //     Value: jsonData.CHANNEL_WATCHED,
-        //         // },
-        //         {
-        //             Name: 'Answer',
-        //             Value: jsonData.ANSWER.trim()
-        //         } ],
-        //         // 'Timestamp': new Date().toISOString(),
-        //         Unit: 'Count',
-        //         Value: jsonData.SUMMARY
-        //     }, ],
-        //     Namespace: DASHBOARD_NAME+'/QuizSummary'
-        // };
-
-        console.log("Creds :%j",AWS.config.credentials);
-
-        let payload = {
-          channelArn: "arn:aws:ivs:eu-west-1:444603092185:channel/tbHb69cdvlbk",
-          metadata:jsonData
+        var params = {
+            MetricData: [{
+                MetricName: jsonData.QUESTION.trim(),
+                Dimensions: [
+                //     {
+                //     Name: 'ChannelName',
+                //     Value: jsonData.CHANNEL_WATCHED,
+                // },
+                {
+                    Name: 'Answer',
+                    Value: jsonData.ANSWER.trim()
+                } ],
+                // 'Timestamp': new Date().toISOString(),
+                Unit: 'Count',
+                Value: jsonData.SUMMARY
+            }, ],
+            Namespace: DASHBOARD_NAME+'/QuizSummary'
         };
 
-        // const uri = URL.parse("https://ivs.eu-west-1.amazonaws.com/PutMetadata");
-        //     console.log(uri.href);
-        //     console.log("Region ",process.env.AWS_REGION);
-        //     const httpRequest = new AWS.HttpRequest(uri.href, process.env.AWS_REGION);
-        //     httpRequest.headers.host = uri.host;
-        //     httpRequest.headers['Content-Type'] = 'application/json';
-        //     httpRequest.method = 'POST';
-        //     httpRequest.body = JSON.stringify(payload);
-        //     console.log("Body :%j",httpRequest.body);
-        //
-        //     AWS.config.credentials.get(err => {
-        //         const signer = new AWS.Signers.V4(httpRequest, "ivs", true);
-        //         signer.addAuthorization(AWS.config.credentials, AWS.util.date.getDate());
-        //
-        //         const options = {
-        //             method: httpRequest.method,
-        //             body: httpRequest.body,
-        //             headers: httpRequest.headers
-        //         };
-        //
-        //         fetch(uri.href, options)
-        //             .then(res => res.json())
-        //             .then(json => {
-        //                 console.log(`JSON Response = ${JSON.stringify(json, null, 2)}`);
-        //                 callback(null, event);
-        //             })
-        //             .catch(err => {
-        //                 console.error(`FETCH ERROR: ${JSON.stringify(err, null, 2)}`);
-        //                 callback(err);
-        //             });
-        //     });
 //         var params = {
 //   DashboardName: 'sfqos4-QoS-QuizSummaryDashboard' /* required */
 // };
@@ -153,7 +114,7 @@ exports.handler = (event, context, callback) => {
 //     req.headers['Host'] = endpoint.host;
 //     req.headers['Content-type'] = "application/json";
 //     req.headers['Authorization'] =  auth;
-//
+// 
 //     req.body = doc;
 //
 //     // var signer = new AWS.Signers.V4(req , 'es');  // es: service code

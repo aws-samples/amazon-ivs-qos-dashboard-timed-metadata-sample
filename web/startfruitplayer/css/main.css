@@ -213,13 +213,3 @@ h2 {
     top: -25%;
   }
 }
-
-.concurrent_viewer {
-  position: absolute;
-  background-color: rgba(0, 0, 0, 0.46);
-  color: white;
-  z-index: 2;
-  height:20px;
-  top: 0;
-  bottom: 0;
-}

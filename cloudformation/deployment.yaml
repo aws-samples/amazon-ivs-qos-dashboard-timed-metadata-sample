@@ -5,13 +5,13 @@ Description: QoS - Player with event capture, ingest and processing implementati
 Mappings:
     SourceCodeBucket:
       General:
-        S3Bucket: 'ganeshji-sfqos'
+        S3Bucket: 'starfruit-qos'
         LambdaUIDeploymentCodePrefix: 'qos/lambda-functions/ui-deployment'
         PlayerSummaryCWCodePrefix: 'qos/lambda-functions/playersummary-cw-function'
         QuizSummaryCWCodePrefix: 'qos/lambda-functions/quizsummary-cw-function'
         AddPartitionFunctionCodePrefix: 'qos/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
-        Version: 'sfqosv2'
+        Version: 'v1'
 
 Parameters:
   LIVEURL:

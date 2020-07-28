@@ -116,9 +116,6 @@ const cardInnerEl = $(".card-inner");
   player.addEventListener(PlayerEventType.METADATA, (metadata) => {
     if (metadata.type === "text/plain") {
       const metadataText = metadata.data;
-      let json = JSON.parse(metadata.data);
-
-      console.log("METADATA TYPE :%s",json.type);
       const position = player.getPosition().toFixed(2);
       console.log(
         `PlayerEvent - METADATA: "${metadataText}". Observed ${position}s after playback started.`
@@ -164,7 +161,7 @@ const cardInnerEl = $(".card-inner");
   player.load(playbackUrl);
 
   // Set volume
-  player.setVolume(1.0);
+  player.setVolume(0.08);
 
   // Display the wait message window
   quizEl.hide();
@@ -172,9 +169,8 @@ const cardInnerEl = $(".card-inner");
 
   // Send off a QoS event every minute
   setInterval(function () {
-    if ((Date.now() - currentEventBeginTime) > 6000) { // one QoS event every minute
+    if ((Date.now() - currentEventBeginTime) > 60000) { // one QoS event every minute
       // Send off a QoS event
-      console.log("Volume :",player.getVolume());
       if (lastRecordedPlayerState == "PLAYING") {
         playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
         console.log("Update playingTimeMsInLastMinute to", playingTimeMsInLastMinute);
@@ -208,7 +204,7 @@ const cardInnerEl = $(".card-inner");
     answersEl.empty();
     questionEl.text(obj.question);
     for (var i = 0; i < obj.answers.length; i++) {
-      answersEl.append($('<div><a href="#" class="answer">' + obj.answers[i] + '</a></div>'));
+      answersEl.append($('<a href="#" class="answer">' + obj.answers[i] + '</a>'));
     }
     cardInnerEl.fadeIn("fast");
     $(".answer").click(function () {

@@ -1,5 +1,1 @@
 qos/sample-videos/video-manifest.txt
-
-aws ivs put-metadata \
-    --channel-arn arn:aws:ivs:eu-west-1:444603092185:channel/tbHb69cdvlbk \
-    --metadata '{"type": "concurrency","value":"2"}'
