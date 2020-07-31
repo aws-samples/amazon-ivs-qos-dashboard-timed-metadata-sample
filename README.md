@@ -29,7 +29,23 @@ make all
 
 ## Deployment
 
-Once the solution has been built you can deploy it either from the S3 bucket the template is uploaded, or by deploying the template in the location: cloudformation/deployment.yaml
+1. Prior to deploying the demo application, review the IVS Getting Started guide and create a channel: https://docs.aws.amazon.com/ivs/latest/userguide/GSIVS.html
+2. Once the channel is created, note the Playback URL. You can retrieve this via the AWS CLI with the command:
+
+aws ivs get-channel --arn [channel ARN]
+
+3. Deploy the cloudformation template either from the S3 bucket the template is uploaded to during the build process, or from folder: cloudformation/deployment.yaml
+4. When prompted for the LIVEURL Parameter at step 2, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel.
+5. Once the CloudFormation template is deployed, navigate to the Amazon Kinesis Management Console. 
+6. From the menu on the left, select Analytics Applications. 
+7. Locate the Kinesis Analytics application deployed by the stack (it will be prefixed with the Stack Name). Select this and from the Actions drop down menu, click on "Start Application"
+8. From the CloudFormation Output menu, open the URL listed
+9. Start streaming to your IVS stream
+10. Metrics will be captured and will be visible under CloudWatch
+
+## Working with the sample application
+
+Link to extended docs here
 
 ## Security
 
