@@ -1,0 +1,12 @@
+Makefile
+
+# build artifacts
+node_modules/
+dist/*.zip
+cloudformation/deployment.yaml
+
+# Python dependencies
+package/
+
+package-lock.json
+yarn.lock
