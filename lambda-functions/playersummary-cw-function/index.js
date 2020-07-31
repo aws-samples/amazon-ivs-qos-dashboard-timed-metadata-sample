@@ -8,12 +8,10 @@
 
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
-const URL = require('url');
 const AWS = require('aws-sdk');
 // Create CloudWatch service object
 var cw = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
 const DASHBOARD_NAME = process.env.DASHBOARD_NAME;
 
 console.log('Loading function');
@@ -29,8 +27,6 @@ exports.handler = (event, context, callback) => {
         const jsonData = JSON.parse(recordData);
         console.log("data :%j", jsonData);
 
-        const uri = URL.parse(GRAPHQL_ENDPOINT);
-        console.log(uri.href);
         console.log("Region ", process.env.AWS_REGION);
 
         // Create parameters JSON for putMetricData
