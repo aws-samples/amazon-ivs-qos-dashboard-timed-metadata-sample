@@ -45,8 +45,6 @@ Resources:
 
   SourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
-    DependsOn:
-      - SourceBucket
     Properties:
       PolicyDocument:
         Statement:
@@ -136,7 +134,6 @@ Resources:
         Name: !Sub '${AWS::StackName}_qos_db'
 
   PlayerLogsTable:
-    DependsOn: GlueDatabase
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
@@ -232,7 +229,6 @@ Resources:
 
   DeployFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn: DeployFunctionRole
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -255,8 +251,6 @@ Resources:
   DeployArtifacts:
     Type: 'Custom::DeployUI'
     DependsOn:
-      - DeployFunction
-      - PlayerLogsDeliveryStream
       - CFDistribution
     Properties:
       DeliveryStreamName: !Ref PlayerLogsDeliveryStream
@@ -302,8 +296,6 @@ Resources:
 
   PlayerSummaryCWFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - LambdaExecutionRole
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -319,8 +311,6 @@ Resources:
 
   QuizSummaryCWFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - LambdaExecutionRole
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -398,12 +388,6 @@ Resources:
 
   AddPartitionFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - AddPartitionFunctionRole
-      - PlayerLogsBucket
-      - GlueDatabase
-      - PlayerLogsTable
-      - WatchTimeLogsTable
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -422,7 +406,6 @@ Resources:
 
   AddPartitionScheduledRule:
     Type: AWS::Events::Rule
-    DependsOn: AddPartitionFunction
     Properties:
       Description: "ScheduledRule"
       ScheduleExpression: "rate(5 minutes)"
@@ -434,9 +417,6 @@ Resources:
 
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AddPartitionFunction
-      - AddPartitionScheduledRule
     Properties:
       FunctionName: !Ref AddPartitionFunction
       Action: "lambda:InvokeFunction"
@@ -467,7 +447,6 @@ Resources:
 
   DeliveryPolicy:
     Type: AWS::IAM::Policy
-    DependsOn: DeliveryRole
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
@@ -491,7 +470,6 @@ Resources:
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
       - PlayerLogsBucket
-      - DeliveryRole
     Properties:
       DeliveryStreamType: DirectPut
       DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-stream'
@@ -530,9 +508,6 @@ Resources:
 
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
-    DependsOn:
-      - KinesisAnalyticsRole
-      - PlayerLogsDeliveryStream
     Properties:
       ApplicationName: !Sub '${AWS::StackName}-qos-realtimeapp1'
       ApplicationDescription: "QoS Realtime Application"
@@ -624,7 +599,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   PlayerSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
-    DependsOn: RealtimeAnalytics
     Properties:
       ApplicationName: !Ref RealtimeAnalytics
       Output:
@@ -637,7 +611,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   QuizSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
-    DependsOn: RealtimeAnalytics
     Properties:
       ApplicationName: !Ref RealtimeAnalytics
       Output:
@@ -698,7 +671,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       Name: !Sub "${AWS::StackName}-WatchTime-GlueTrigger"
 
   WatchTimeLogsTable:
-    DependsOn: GlueDatabase
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
@@ -763,7 +735,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   EventIngestApiPUT:
     DependsOn:
-      - EventIngestEndpointRole
       - PlayerLogsDeliveryStream
     Type: AWS::ApiGateway::Method
     Properties:
