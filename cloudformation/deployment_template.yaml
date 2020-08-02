@@ -74,19 +74,19 @@ Resources:
           Id: myS3Origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CFOriginAccessIdentity}
-        Enabled: 'true'
+        Enabled: True
         Comment: !Sub "${AWS::StackName} - distribution for vod website"
         DefaultRootObject: index.html
         DefaultCacheBehavior:
           TargetOriginId: myS3Origin
           ViewerProtocolPolicy: allow-all
-          MinTTL: '300'
-          MaxTTL: '86400'
-          DefaultTTL: '86400'
-          SmoothStreaming: 'false'
-          Compress: 'true'
+          MinTTL: 300
+          MaxTTL: 86400
+          DefaultTTL: 86400
+          SmoothStreaming: False
+          Compress: True
           ForwardedValues:
-            QueryString: 'false'
+            QueryString: False
             Cookies:
               Forward: 'none'
             Headers:
@@ -95,7 +95,7 @@ Resources:
               - 'Origin'
         PriceClass: PriceClass_All
         ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
+          CloudFrontDefaultCertificate: True
         Logging:
           Bucket: !GetAtt PlayerLogsBucket.DomainName
           Prefix: 'access_logs/cloudfront/'
@@ -747,7 +747,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecordBatch"
         IntegrationResponses:
           -
-            StatusCode: 200
+            StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
@@ -768,7 +768,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       RestApiId: !Ref EventIngestApi
       MethodResponses:
         -
-          StatusCode: 200
+          StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: true
           ResponseModels: { "application/json": "Empty" }
@@ -782,7 +782,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Type: MOCK
         IntegrationResponses:
           -
-            StatusCode: 200
+            StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
@@ -795,7 +795,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       RestApiId: !Ref EventIngestApi
       MethodResponses:
         -
-          StatusCode: 200
+          StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
