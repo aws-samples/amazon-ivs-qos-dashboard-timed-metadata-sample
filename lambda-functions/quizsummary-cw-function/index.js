@@ -8,7 +8,6 @@
 
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
-const URL = require('url');
 const AWS = require('aws-sdk');
 let region = process.env.AWS_REGION;
 // Create CloudWatch service object
@@ -33,7 +32,6 @@ var endpoint = new AWS.Endpoint(esDomain.endpoint);
 var creds = new AWS.EnvironmentCredentials('AWS');
 const auth = "Basic " + new Buffer('admin' + ":" + 'Admin@123').toString("base64");
 
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
 const DASHBOARD_NAME = process.env.DASHBOARD_NAME;
 
 console.log('Loading function');
@@ -49,8 +47,6 @@ exports.handler = (event, context, callback) => {
         const jsonData = JSON.parse(recordData);
         console.log("data :%j", jsonData);
 
-        const uri = URL.parse(GRAPHQL_ENDPOINT);
-        console.log(uri.href);
         console.log("Region ", process.env.AWS_REGION);
 
         // postToES(JSON.stringify(jsonData), context);
