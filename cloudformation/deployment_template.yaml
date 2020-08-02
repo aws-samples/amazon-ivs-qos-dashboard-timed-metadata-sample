@@ -841,3 +841,15 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 Outputs:
   PlayerURL:
     Value: !Sub https://${CFDistribution.DomainName}/ui/index.html
+  PlayerCWDashboard:
+    Value: !Sub
+      - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
+      - { DashboardName: !Ref IVSQoSSummaryDashboard}
+  QuizCWDashboard:
+    Value: !Sub
+      - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
+      - { DashboardName: !Ref IVSQuizDashboard}
+  RealTimeAnalyticsApp:
+    Value: !Sub 
+      - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
+      - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }
