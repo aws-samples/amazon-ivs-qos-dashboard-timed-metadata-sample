@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
 
   //create the hourly partition
   await createPlayerLogsPartition(year,month,day,hour);
-  await createETLJobPartition();
+  // await createETLJobPartition();
 };
 
 async function createPlayerLogsPartition(year, month, day, hour) {
@@ -69,38 +69,38 @@ async function createPlayerLogsPartition(year, month, day, hour) {
   }
 }
 
-async function createETLJobPartition() {
-
-  let {
-    QueryExecutionId
-  } = await runQuery({
-    QueryString: `MSCK REPAIR TABLE ${ETL_PLAYER_LOGS_TABLE}`,
-  });
-  for (let attempt = 0; attempt < 10; attempt++) {
-    let result = await getQueryExecution(QueryExecutionId);
-    let state = result.QueryExecution.Status.State;
-    console.log("CDNLogs.Execution status ",state);
-    switch (state) {
-      case 'RUNNING':
-      case 'QUEUED':
-        console.log(
-          'query is queued or running, retrying in ',
-          Math.pow(2, attempt + 1) * 100,
-          'ms',
-        );
-        await delay(Math.pow(2, attempt + 1) * 100);
-        break;
-      case 'SUCCEEDED':
-        return true;
-      case 'FAILED':
-        console.log('query failed');
-        throw new Error(result.QueryExecution.Status.StateChangeReason);
-      case 'CANCELLED':
-        console.log('query is cancelled');
-        return;
-    }
-  }
-}
+// async function createETLJobPartition() {
+//
+//   let {
+//     QueryExecutionId
+//   } = await runQuery({
+//     QueryString: `MSCK REPAIR TABLE ${ETL_PLAYER_LOGS_TABLE}`,
+//   });
+//   for (let attempt = 0; attempt < 10; attempt++) {
+//     let result = await getQueryExecution(QueryExecutionId);
+//     let state = result.QueryExecution.Status.State;
+//     console.log("CDNLogs.Execution status ",state);
+//     switch (state) {
+//       case 'RUNNING':
+//       case 'QUEUED':
+//         console.log(
+//           'query is queued or running, retrying in ',
+//           Math.pow(2, attempt + 1) * 100,
+//           'ms',
+//         );
+//         await delay(Math.pow(2, attempt + 1) * 100);
+//         break;
+//       case 'SUCCEEDED':
+//         return true;
+//       case 'FAILED':
+//         console.log('query failed');
+//         throw new Error(result.QueryExecution.Status.StateChangeReason);
+//       case 'CANCELLED':
+//         console.log('query is cancelled');
+//         return;
+//     }
+//   }
+// }
 
 async function runQuery({ QueryString, UniqueRequestId }) {
   console.log('running query', QueryString);
