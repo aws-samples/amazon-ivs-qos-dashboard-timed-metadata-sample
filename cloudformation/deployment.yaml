@@ -777,7 +777,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               {
                   #set($json = $util.parseJson($elem.Data))
                   #set($json.event_time = $context.requestTimeEpoch)
-                  "Data": "$util.base64Encode($elem.Data)"
+                  "Data": "$util.base64Encode($json)"
               }#if($foreach.hasNext),#end
               #end
             ]}

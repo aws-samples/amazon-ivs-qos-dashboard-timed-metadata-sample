@@ -13,6 +13,7 @@ stack_name = ivsqos
 docker_image = ivsqos
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
 version = ivsqosv1
+live_url = <ENTER LIVE URL FROM IVS>
 
 all: image build package copycodeww copytemplateww deploy
 
@@ -69,7 +70,7 @@ template:
 deploy:
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides DeployDemoUI=true LiveURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
+	--parameter-overrides DeployDemoUI=true LiveURL=
 
 clean:
 	rm -r dist/*
