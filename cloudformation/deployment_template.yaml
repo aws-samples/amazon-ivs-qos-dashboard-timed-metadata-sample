@@ -14,10 +14,19 @@ Mappings:
         Version: 'VERSION'
 
 Parameters:
-  LIVEURL:
+  LiveURL:
     Type: String
 
+  DeployDemoUI:
+    Type: String
+    Description: Deploy the demo user interface for testing
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
+
 Conditions:
+  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, Yes]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
 
 Resources:
@@ -65,6 +74,7 @@ Resources:
 
   CFDistribution:
     Type: 'AWS::CloudFront::Distribution'
+    Condition: DeployDemoUICondition
     DependsOn:
       - SourceBucket
     Properties:
@@ -193,6 +203,7 @@ Resources:
 
   DeployFunctionRole:
     Type: 'AWS::IAM::Role'
+    Condition: DeployDemoUICondition
     Properties:
       Path: /service-role/
       ManagedPolicyArns:
@@ -229,6 +240,7 @@ Resources:
 
   DeployFunction:
     Type: 'AWS::Lambda::Function'
+    Condition: DeployDemoUICondition
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -242,7 +254,7 @@ Resources:
           UIPrefix: 'ui'
           PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
           AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          LIVE_URL: !Ref LIVEURL
+          LIVE_URL: !Ref LiveURL
       Handler: index.handler
       Role: !GetAtt DeployFunctionRole.Arn
       Timeout: 300
@@ -250,6 +262,7 @@ Resources:
 
   DeployArtifacts:
     Type: 'Custom::DeployUI'
+    Condition: DeployDemoUICondition
     DependsOn:
       - CFDistribution
     Properties:
@@ -841,6 +854,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 Outputs:
   PlayerURL:
     Value: !Sub https://${CFDistribution.DomainName}/ui/index.html
+    Condition: DeployDemoUICondition
   PlayerCWDashboard:
     Value: !Sub
       - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
@@ -850,6 +864,6 @@ Outputs:
       - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
       - { DashboardName: !Ref IVSQuizDashboard}
   RealTimeAnalyticsApp:
-    Value: !Sub 
+    Value: !Sub
       - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
       - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }

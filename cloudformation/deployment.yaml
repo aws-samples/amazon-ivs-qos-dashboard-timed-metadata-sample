@@ -5,19 +5,28 @@ Description: QoS - Player with event capture, ingest and processing implementati
 Mappings:
     SourceCodeBucket:
       General:
-        S3Bucket: 'starfruit-qos'
+        S3Bucket: 'ganeshji-sfqos'
         LambdaUIDeploymentCodePrefix: 'qos/lambda-functions/ui-deployment'
         PlayerSummaryCWCodePrefix: 'qos/lambda-functions/playersummary-cw-function'
         QuizSummaryCWCodePrefix: 'qos/lambda-functions/quizsummary-cw-function'
         AddPartitionFunctionCodePrefix: 'qos/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
-        Version: 'v1'
+        Version: 'sfqosv3'
 
 Parameters:
-  LIVEURL:
+  LiveURL:
     Type: String
 
+  DeployDemoUI:
+    Type: String
+    Description: Deploy the demo user interface for testing
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
+
 Conditions:
+  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, Yes]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
 
 Resources:
@@ -45,8 +54,6 @@ Resources:
 
   SourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
-    DependsOn:
-      - SourceBucket
     Properties:
       PolicyDocument:
         Statement:
@@ -67,6 +74,7 @@ Resources:
 
   CFDistribution:
     Type: 'AWS::CloudFront::Distribution'
+    Condition: DeployDemoUICondition
     DependsOn:
       - SourceBucket
     Properties:
@@ -76,19 +84,19 @@ Resources:
           Id: myS3Origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CFOriginAccessIdentity}
-        Enabled: 'true'
+        Enabled: True
         Comment: !Sub "${AWS::StackName} - distribution for vod website"
         DefaultRootObject: index.html
         DefaultCacheBehavior:
           TargetOriginId: myS3Origin
           ViewerProtocolPolicy: allow-all
-          MinTTL: '300'
-          MaxTTL: '86400'
-          DefaultTTL: '86400'
-          SmoothStreaming: 'false'
-          Compress: 'true'
+          MinTTL: 300
+          MaxTTL: 86400
+          DefaultTTL: 86400
+          SmoothStreaming: False
+          Compress: True
           ForwardedValues:
-            QueryString: 'false'
+            QueryString: False
             Cookies:
               Forward: 'none'
             Headers:
@@ -97,7 +105,7 @@ Resources:
               - 'Origin'
         PriceClass: PriceClass_All
         ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
+          CloudFrontDefaultCertificate: True
         Logging:
           Bucket: !GetAtt PlayerLogsBucket.DomainName
           Prefix: 'access_logs/cloudfront/'
@@ -136,7 +144,6 @@ Resources:
         Name: !Sub '${AWS::StackName}_qos_db'
 
   PlayerLogsTable:
-    DependsOn: GlueDatabase
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
@@ -196,6 +203,7 @@ Resources:
 
   DeployFunctionRole:
     Type: 'AWS::IAM::Role'
+    Condition: DeployDemoUICondition
     Properties:
       Path: /service-role/
       ManagedPolicyArns:
@@ -232,7 +240,7 @@ Resources:
 
   DeployFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn: DeployFunctionRole
+    Condition: DeployDemoUICondition
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -246,7 +254,7 @@ Resources:
           UIPrefix: 'ui'
           PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
           AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          LIVE_URL: !Ref LIVEURL
+          LIVE_URL: !Ref LiveURL
       Handler: index.handler
       Role: !GetAtt DeployFunctionRole.Arn
       Timeout: 300
@@ -254,9 +262,8 @@ Resources:
 
   DeployArtifacts:
     Type: 'Custom::DeployUI'
+    Condition: DeployDemoUICondition
     DependsOn:
-      - DeployFunction
-      - PlayerLogsDeliveryStream
       - CFDistribution
     Properties:
       DeliveryStreamName: !Ref PlayerLogsDeliveryStream
@@ -302,8 +309,6 @@ Resources:
 
   PlayerSummaryCWFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - LambdaExecutionRole
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -319,8 +324,6 @@ Resources:
 
   QuizSummaryCWFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - LambdaExecutionRole
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -398,12 +401,6 @@ Resources:
 
   AddPartitionFunction:
     Type: 'AWS::Lambda::Function'
-    DependsOn:
-      - AddPartitionFunctionRole
-      - PlayerLogsBucket
-      - GlueDatabase
-      - PlayerLogsTable
-      - WatchTimeLogsTable
     Properties:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
@@ -422,7 +419,6 @@ Resources:
 
   AddPartitionScheduledRule:
     Type: AWS::Events::Rule
-    DependsOn: AddPartitionFunction
     Properties:
       Description: "ScheduledRule"
       ScheduleExpression: "rate(5 minutes)"
@@ -434,9 +430,6 @@ Resources:
 
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AddPartitionFunction
-      - AddPartitionScheduledRule
     Properties:
       FunctionName: !Ref AddPartitionFunction
       Action: "lambda:InvokeFunction"
@@ -467,7 +460,6 @@ Resources:
 
   DeliveryPolicy:
     Type: AWS::IAM::Policy
-    DependsOn: DeliveryRole
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
@@ -491,7 +483,6 @@ Resources:
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
       - PlayerLogsBucket
-      - DeliveryRole
     Properties:
       DeliveryStreamType: DirectPut
       DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-stream'
@@ -530,9 +521,6 @@ Resources:
 
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
-    DependsOn:
-      - KinesisAnalyticsRole
-      - PlayerLogsDeliveryStream
     Properties:
       ApplicationName: !Sub '${AWS::StackName}-qos-realtimeapp1'
       ApplicationDescription: "QoS Realtime Application"
@@ -624,7 +612,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   PlayerSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
-    DependsOn: RealtimeAnalytics
     Properties:
       ApplicationName: !Ref RealtimeAnalytics
       Output:
@@ -637,7 +624,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   QuizSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
-    DependsOn: RealtimeAnalytics
     Properties:
       ApplicationName: !Ref RealtimeAnalytics
       Output:
@@ -698,7 +684,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       Name: !Sub "${AWS::StackName}-WatchTime-GlueTrigger"
 
   WatchTimeLogsTable:
-    DependsOn: GlueDatabase
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
@@ -763,7 +748,6 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 
   EventIngestApiPUT:
     DependsOn:
-      - EventIngestEndpointRole
       - PlayerLogsDeliveryStream
     Type: AWS::ApiGateway::Method
     Properties:
@@ -776,7 +760,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecordBatch"
         IntegrationResponses:
           -
-            StatusCode: 200
+            StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
@@ -797,7 +781,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       RestApiId: !Ref EventIngestApi
       MethodResponses:
         -
-          StatusCode: 200
+          StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: true
           ResponseModels: { "application/json": "Empty" }
@@ -811,7 +795,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Type: MOCK
         IntegrationResponses:
           -
-            StatusCode: 200
+            StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
@@ -824,7 +808,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       RestApiId: !Ref EventIngestApi
       MethodResponses:
         -
-          StatusCode: 200
+          StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
@@ -870,3 +854,16 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 Outputs:
   PlayerURL:
     Value: !Sub https://${CFDistribution.DomainName}/ui/index.html
+    Condition: DeployDemoUICondition
+  PlayerCWDashboard:
+    Value: !Sub
+      - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
+      - { DashboardName: !Ref IVSQoSSummaryDashboard}
+  QuizCWDashboard:
+    Value: !Sub
+      - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
+      - { DashboardName: !Ref IVSQuizDashboard}
+  RealTimeAnalyticsApp:
+    Value: !Sub
+      - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
+      - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }

@@ -7,13 +7,13 @@ video_assets_bucket = aws-streaming-media-analytics-sourcecontent-us-east-1
 # can set multiple AWS regions separated by space
 regions = eu-west-1
 # regions = ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2 ap-south-1 ca-central-1 eu-west-1 eu-west-2 eu-west-3 eu-north-1 sa-east-1 us-east-1 us-east-2 us-west-2
-version = sfqosv2
+version = sfqosv3
 # set to AWS CLI profile name to use
 profile = default
 # profile = mediaqos-rodeo
 # set Stack Name
-stack_name = sfqos4
-docker_image = sfqos3
+stack_name = sfqos5
+docker_image = sfqos4
 
 all: image build package copycodeww copytemplateww deploy
 
@@ -72,7 +72,7 @@ template:
 deploy:
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides LIVEURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
+	--parameter-overrides LiveURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8,DeployDemoUI=No
 
 clean:
 	rm -r dist/*
