@@ -1,13 +1,5 @@
 'use strict';
-/**
- * This shows how to use standard Apollo client on Node.js
- */
-/**
- * This shows how to use standard Apollo client on Node.js
- */
 
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
 const AWS = require('aws-sdk');
 // Create CloudWatch service object
 var cw = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
@@ -46,7 +38,7 @@ exports.handler = (event, context, callback) => {
                 Unit: jsonData.METRIC_UNIT.trim(),
                 Value: jsonData.SUMMARY
             }, ],
-            Namespace: DASHBOARD_NAME+'/PlayerSummary2'
+            Namespace: DASHBOARD_NAME+'/PlayerSummary'
         };
 
         cw.putMetricData(params, function(err, data) {

@@ -1,30 +1,29 @@
-.PHONY: all build package copycodeww copytemplateww syncvideos creates3 deletes3 deploy quick
+.PHONY: all build package copycodeww copytemplateww creates3 deletes3 deploy quick
 
 # set bucket name prefix to be created
-bucket = starfruit-qos
-# bucket = aws-streaming-media-analytics-workshop
-video_assets_bucket = aws-streaming-media-analytics-sourcecontent-us-east-1
+bucket = <ENTER S3 BUCKET NAME TO HOLD DEPLOYMENT ARTIFACTS>
 # can set multiple AWS regions separated by space
-regions = eu-west-1
+regions = <ENTER ONE OR MORE AWS REGION CODE TO DEPLOY. Example: eu-west-1>
 # regions = ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2 ap-south-1 ca-central-1 eu-west-1 eu-west-2 eu-west-3 eu-north-1 sa-east-1 us-east-1 us-east-2 us-west-2
-version = v1
 # set to AWS CLI profile name to use
-# profile = default
-profile = starfruit_qos
+profile = <ENTER THE AWS CLI PROFILE NAME. Example: default>
 # set Stack Name
-stack_name = sfqos2
-docker_image = sfqos1
+stack_name = ivsqos
+# set the name of Docket Image which will be build
+docker_image = ivsqos
+# Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
+version = ivsqosv1
+live_url = <ENTER LIVE URL FROM IVS>
 
-all: image build package copycodeww copytemplateww
+all: image build package copycodeww copytemplateww deploy
 
 image:
 	docker build --tag amazonlinux:${docker_image} .
 
-
 build:
 	docker run --rm --volume ${PWD}/lambda-functions/deploy-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install adm-zip --save; npm install generate-password --save; npm install mime --save; npm install --only=prod"
-	docker run --rm --volume ${PWD}/lambda-functions/playersummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install es6-promise@4.1.1 --save; npm install isomorphic-fetch@2.2.1 --save; npm install --only=prod"
-	docker run --rm --volume ${PWD}/lambda-functions/quizsummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install es6-promise@4.1.1 --save; npm install isomorphic-fetch@2.2.1 --save; npm install --only=prod"
+	docker run --rm --volume ${PWD}/lambda-functions/playersummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
+	docker run --rm --volume ${PWD}/lambda-functions/quizsummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 	docker run --rm --volume ${PWD}/lambda-functions/add-partition-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 
 package:
@@ -54,7 +53,6 @@ copycodeww:
 		aws s3 cp dist/playersummary-cw-function.zip s3://$(bucket)-$$region/qos/lambda-functions/playersummary-cw-function/$(version)/ --acl public-read --profile $(profile); \
 		aws s3 cp dist/quizsummary-cw-function.zip s3://$(bucket)-$$region/qos/lambda-functions/quizsummary-cw-function/$(version)/ --acl public-read --profile $(profile); \
 		aws s3 cp dist/add-partition-function.zip s3://$(bucket)-$$region/qos/lambda-functions/add-partition-function/$(version)/ --acl public-read --profile $(profile); \
-		aws s3 cp cloudformation/appsync_schema.graphql s3://$(bucket)-$$region/qos/lambda-functions/recentvideoview-appsync-function/$(version)/ --acl public-read --profile $(profile); \
 		aws s3 cp cloudformation/swagger-apigateway.yaml s3://$(bucket)-$$region/swagger-apigateway.yaml --acl public-read --profile $(profile); \
 		aws s3 cp cloudformation/etl/player_log_job s3://$(bucket)-$$region/qos/etl/$(version)/ --acl public-read --profile $(profile); \
 		done
@@ -70,9 +68,9 @@ template:
 		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/deployment.yaml
 
 deploy:
-	aws cloudformation deploy --template-file cloudformation/deployment.yaml --s3-bucket ${bucket}-$(regions) \
-	--stack-name $(stack_name)  --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides LiveURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8 DeployDemoUI=true
+	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
+	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
+	--parameter-overrides DeployDemoUI=true LiveURL=
 
 clean:
 	rm -r dist/*
