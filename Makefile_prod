@@ -72,7 +72,8 @@ template:
 deploy:
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml --s3-bucket ${bucket}-$(regions) \
 	--stack-name $(stack_name)  --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides LIVEURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
+	--parameter-overrides LiveURL=https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8 \
+	--parameter-overrides DeployDemoUI=No
 
 clean:
 	rm -r dist/*
