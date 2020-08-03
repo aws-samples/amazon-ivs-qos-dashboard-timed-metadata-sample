@@ -11,7 +11,7 @@ Mappings:
         QuizSummaryCWCodePrefix: 'qos/lambda-functions/quizsummary-cw-function'
         AddPartitionFunctionCodePrefix: 'qos/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
-        Version: 'sfqosv3'
+        Version: 'sfqosv6'
 
 Parameters:
   LiveURL:
@@ -20,18 +20,19 @@ Parameters:
   DeployDemoUI:
     Type: String
     Description: Deploy the demo user interface for testing
-    Default: Yes
+    Default: true
     AllowedValues:
-      - Yes
-      - No
+      - true
+      - false
 
 Conditions:
-  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, Yes]
+  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, true]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
 
 Resources:
   SourceBucket:
     Type: 'AWS::S3::Bucket'
+    Condition: DeployDemoUICondition
     Properties:
       VersioningConfiguration:
         Status: Enabled
@@ -54,6 +55,7 @@ Resources:
 
   SourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
+    Condition: DeployDemoUICondition
     Properties:
       PolicyDocument:
         Statement:
@@ -68,6 +70,7 @@ Resources:
 
   CFOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: DeployDemoUICondition
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: !Sub "${AWS::StackName} - QoS - OAI for player"
@@ -415,7 +418,7 @@ Resources:
           ATHENA_RESULT_BUCKET: !Ref PlayerLogsBucket
           PLAYER_LOGS_BUCKET: !Ref PlayerLogsBucket
           PLAYER_LOGS_TABLE: !Join ['.', [!Ref GlueDatabase, !Ref PlayerLogsTable]]
-          ETL_PLAYER_LOGS_TABLE: !Join ['.', [!Ref GlueDatabase, !Ref WatchTimeLogsTable]]
+          # ETL_PLAYER_LOGS_TABLE: !Join ['.', [!Ref GlueDatabase, !Ref WatchTimeLogsTable]]
 
   AddPartitionScheduledRule:
     Type: AWS::Events::Rule
@@ -650,82 +653,83 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 
-  WatchTimeGlueJob:
-      Type: AWS::Glue::Job
-      DependsOn: DeployFunction
-      Properties:
-        Command:
-          Name: glueetl
-          ScriptLocation: !Join ["", ["s3://",!Ref SourceBucket,"/qos/etl/",!FindInMap [SourceCodeBucket, General, Version],"/player_log_job"]]
-        DefaultArguments:
-          "--job-bookmark-option": "job-bookmark-enable"
-          "--GLUE_DB_NAME": !Ref GlueDatabase
-          "--GLUE_PLAYER_LOG_TABLE": !Ref PlayerLogsTable
-          "--PLAYER_LOG_BUCKET_PROCESSED_PATH": !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
-        ExecutionProperty:
-          MaxConcurrentRuns: 2
-        MaxRetries: 0
-        Name: !Sub "${AWS::StackName}-WatchTimeGlueJob"
-        Role: !Ref GlueJobRole
-
-  WatchTimeGlueTrigger:
-    Type: AWS::Glue::Trigger
-    Properties:
-      Type: 'SCHEDULED'
-      Description: 'ETL Job to calculate Watch Time'
-      Actions:
-        - JobName: !Ref WatchTimeGlueJob
-          Arguments:
-            '--job-bookmark-option': job-bookmark-enable
-            '--GLUE_DB_NAME': !Ref GlueDatabase
-            '--GLUE_PLAYER_LOG_TABLE': !Ref PlayerLogsTable
-            '--PLAYER_LOG_BUCKET_PROCESSED_PATH': !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
-      Schedule: cron(0/5 * * * ? *)
-      Name: !Sub "${AWS::StackName}-WatchTime-GlueTrigger"
-
-  WatchTimeLogsTable:
-    Type: AWS::Glue::Table
-    Properties:
-      CatalogId: !Ref AWS::AccountId
-      DatabaseName: !Ref GlueDatabase
-      TableInput:
-        Name: 'watch_time_logs'
-        TableType: EXTERNAL_TABLE
-        Parameters: {
-          "classification": "parquet",
-          "typeOfData": "file",
-          "compressionType": "none"
-        }
-        PartitionKeys:
-        - Name: partition_key
-          Type: string
-        StorageDescriptor:
-          OutputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat
-          Columns:
-          - Name: MetricType
-            Type: string
-          - Name: user_id
-            Type: string
-          - Name: video_id
-            Type: string
-          - Name: at
-            Type: double
-          - Name: TimeStamp
-            Type: bigint
-          - Name: duration
-            Type: int
-          - Name: year
-            Type: string
-          - Name: month
-            Type: string
-          - Name: day
-            Type: string
-          - Name: watch_percent
-            Type: double
-          InputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
-          Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/watch_time_processed/']]
-          SerdeInfo:
-            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+  # WatchTimeGlueJob:
+  #     Type: AWS::Glue::Job
+  #     Condition: DeployDemoUICondition
+  #     DependsOn: DeployFunction
+  #     Properties:
+  #       Command:
+  #         Name: glueetl
+  #         ScriptLocation: !Join ["", ["s3://",!Ref SourceBucket,"/qos/etl/",!FindInMap [SourceCodeBucket, General, Version],"/player_log_job"]]
+  #       DefaultArguments:
+  #         "--job-bookmark-option": "job-bookmark-enable"
+  #         "--GLUE_DB_NAME": !Ref GlueDatabase
+  #         "--GLUE_PLAYER_LOG_TABLE": !Ref PlayerLogsTable
+  #         "--PLAYER_LOG_BUCKET_PROCESSED_PATH": !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
+  #       ExecutionProperty:
+  #         MaxConcurrentRuns: 2
+  #       MaxRetries: 0
+  #       Name: !Sub "${AWS::StackName}-WatchTimeGlueJob"
+  #       Role: !Ref GlueJobRole
+  #
+  # WatchTimeGlueTrigger:
+  #   Type: AWS::Glue::Trigger
+  #   Properties:
+  #     Type: 'SCHEDULED'
+  #     Description: 'ETL Job to calculate Watch Time'
+  #     Actions:
+  #       - JobName: !Ref WatchTimeGlueJob
+  #         Arguments:
+  #           '--job-bookmark-option': job-bookmark-enable
+  #           '--GLUE_DB_NAME': !Ref GlueDatabase
+  #           '--GLUE_PLAYER_LOG_TABLE': !Ref PlayerLogsTable
+  #           '--PLAYER_LOG_BUCKET_PROCESSED_PATH': !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
+  #     Schedule: cron(0/5 * * * ? *)
+  #     Name: !Sub "${AWS::StackName}-WatchTime-GlueTrigger"
+  #
+  # WatchTimeLogsTable:
+  #   Type: AWS::Glue::Table
+  #   Properties:
+  #     CatalogId: !Ref AWS::AccountId
+  #     DatabaseName: !Ref GlueDatabase
+  #     TableInput:
+  #       Name: 'watch_time_logs'
+  #       TableType: EXTERNAL_TABLE
+  #       Parameters: {
+  #         "classification": "parquet",
+  #         "typeOfData": "file",
+  #         "compressionType": "none"
+  #       }
+  #       PartitionKeys:
+  #       - Name: partition_key
+  #         Type: string
+  #       StorageDescriptor:
+  #         OutputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat
+  #         Columns:
+  #         - Name: MetricType
+  #           Type: string
+  #         - Name: user_id
+  #           Type: string
+  #         - Name: video_id
+  #           Type: string
+  #         - Name: at
+  #           Type: double
+  #         - Name: TimeStamp
+  #           Type: bigint
+  #         - Name: duration
+  #           Type: int
+  #         - Name: year
+  #           Type: string
+  #         - Name: month
+  #           Type: string
+  #         - Name: day
+  #           Type: string
+  #         - Name: watch_percent
+  #           Type: double
+  #         InputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
+  #         Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/watch_time_processed/']]
+  #         SerdeInfo:
+  #           SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
 
   EventIngestApi:
     Type: AWS::ApiGateway::RestApi

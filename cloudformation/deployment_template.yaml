@@ -20,18 +20,19 @@ Parameters:
   DeployDemoUI:
     Type: String
     Description: Deploy the demo user interface for testing
-    Default: Yes
+    Default: true
     AllowedValues:
-      - Yes
-      - No
+      - true
+      - false
 
 Conditions:
-  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, Yes]
+  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, true]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
 
 Resources:
   SourceBucket:
     Type: 'AWS::S3::Bucket'
+    Condition: DeployDemoUICondition
     Properties:
       VersioningConfiguration:
         Status: Enabled
@@ -54,6 +55,7 @@ Resources:
 
   SourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
+    Condition: DeployDemoUICondition
     Properties:
       PolicyDocument:
         Statement:
@@ -68,6 +70,7 @@ Resources:
 
   CFOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: DeployDemoUICondition
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: !Sub "${AWS::StackName} - QoS - OAI for player"
