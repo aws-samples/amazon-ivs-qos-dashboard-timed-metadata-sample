@@ -48,11 +48,7 @@ deletes3:
 copycodeww:
 	@for region in $(regions) ; do \
 	  echo $$region; echo $(bucket);\
-		aws s3 cp dist/deploy-function.zip s3://$(bucket)-$$region/qos/lambda-functions/ui-deployment/$(version)/ --acl public-read --profile $(profile); \
 		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/lambda-functions/ui-deployment/user-interfaces/$(version)/ --acl public-read --profile $(profile); \
-		aws s3 cp dist/playersummary-cw-function.zip s3://$(bucket)-$$region/qos/lambda-functions/playersummary-cw-function/$(version)/ --acl public-read --profile $(profile); \
-		aws s3 cp dist/quizsummary-cw-function.zip s3://$(bucket)-$$region/qos/lambda-functions/quizsummary-cw-function/$(version)/ --acl public-read --profile $(profile); \
-		aws s3 cp dist/add-partition-function.zip s3://$(bucket)-$$region/qos/lambda-functions/add-partition-function/$(version)/ --acl public-read --profile $(profile); \
 		aws s3 cp cloudformation/swagger-apigateway.yaml s3://$(bucket)-$$region/swagger-apigateway.yaml --acl public-read --profile $(profile); \
 		aws s3 cp cloudformation/etl/player_log_job s3://$(bucket)-$$region/qos/etl/$(version)/ --acl public-read --profile $(profile); \
 		done
@@ -60,14 +56,16 @@ copycodeww:
 copytemplateww:
 		@for region in $(regions);do \
 		echo $$region;	echo $(bucket); \
-		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/deployment.yaml; \
+		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/sam_input.yaml; \
+		sam package -t cloudformation/sam_input.yaml --s3-bucket $(bucket)-$$region --s3-prefix sam/lambda-functions/ --output-template-file cloudformation/deployment.yaml --profile $(profile); \
 		aws s3 cp cloudformation/deployment.yaml s3://$(bucket)-$$region/qos/cloudformation/$(version)/ --acl public-read --profile $(profile); \
 		done
 
 template:
-		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/deployment.yaml
+		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/sam_input.yaml
 
 deploy:
+	sam package -t cloudformation/sam_input.yaml --s3-bucket $(bucket)-eu-west-1 --s3-prefix sam/lambda-functions/ --output-template-file cloudformation/deployment.yaml --profile $(profile); \
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
 	--parameter-overrides DeployDemoUI=true LiveURL=
