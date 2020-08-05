@@ -864,3 +864,11 @@ Outputs:
     Value: !Sub
       - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
       - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }
+  sendQoSEventUrl:
+    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+  sendQuizEventUrl:
+    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+  DeliveryStreamName:
+    Value: !Sub '${AWS::StackName}-playerlogs-stream' 
+  LiveURL:
+    Value: !Ref LiveURL
