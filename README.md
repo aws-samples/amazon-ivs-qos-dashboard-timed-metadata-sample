@@ -16,13 +16,13 @@ Building this project requires the following dependencies to be installed on you
 
 - make
 - Docker
-- AWS CLI
+- AWS CLI (https://aws.amazon.com/cli/)
 
 ## Build Instructions
 
 1. Copy the Makefile.sample and edit the variables in the top section to define the appropriate resources in the AWS account you wish to deploy this to
 2. Save the file with the name: Makefile
-3. To create the S3 bucket to store the build artefacts, run the command:
+3. To create the S3 bucket to store the build artifacts, run the command:
 make creates3
 4. To build the artifacts and Cloudformation template to deploy the solution, run the command:
 make all

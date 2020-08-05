@@ -6,6 +6,7 @@ Makefile
 node_modules/
 dist/*.zip
 cloudformation/deployment.yaml
+cloudformation/deployment_package.yaml
 
 # Python dependencies
 package/

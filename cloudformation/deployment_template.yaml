@@ -242,12 +242,10 @@ Resources:
               - s3.amazonaws.com
 
   DeployFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: 'AWS::Serverless::Function'
     Condition: DeployDemoUICondition
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "deploy-function.zip"]]
+      CodeUri: ../dist/deploy-function.zip
       MemorySize: 512
       Environment:
         Variables:
@@ -311,11 +309,9 @@ Resources:
                 Resource: "*"
 
   PlayerSummaryCWFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: 'AWS::Serverless::Function'
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "PlayerSummaryCWCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "playersummary-cw-function.zip"]]
+      CodeUri: ../dist/playersummary-cw-function.zip
       MemorySize: 512
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -326,11 +322,9 @@ Resources:
           DASHBOARD_NAME: !Sub ${AWS::StackName}-QoS
 
   QuizSummaryCWFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: 'AWS::Serverless::Function'
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "QuizSummaryCWCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "quizsummary-cw-function.zip"]]
+      CodeUri: ../dist/quizsummary-cw-function.zip
       MemorySize: 512
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -403,11 +397,10 @@ Resources:
                 - athena.amazonaws.com
 
   AddPartitionFunction:
-    Type: 'AWS::Lambda::Function'
+
+    Type: 'AWS::Serverless::Function'
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "AddPartitionFunctionCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "add-partition-function.zip"]]
+      CodeUri: ../dist/add-partition-function.zip
       MemorySize: 512
       Handler: index.handler
       Role: !GetAtt AddPartitionFunctionRole.Arn
