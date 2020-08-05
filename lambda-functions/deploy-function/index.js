@@ -39,9 +39,7 @@ exports.handler = function(event, context) {
   let jobs = Promise.all([uploadUIAssets(event)]);
 
   jobs.then(args => {
-   // console.log("Args 2 :%j",args[2]);
-   // responseData.UserName = userName;
-   // responseData.Password = temporaryPassword;
+  
    sendResponse(event, context, responseStatus, responseData);
   });
  }
@@ -94,24 +92,6 @@ function uploadUIAssets(event) {
    // });
   });
 }
-
-//copy the sample video assets..
-function uploadGlueJobDefinition(event) {
- console.log("In GlueJobDefinition source - destination :%s - %s", SourceBucket, SourceFileBucket + GlueJobDefinition);
-
- var params = {
-    Bucket: SourceBucket,
-    CopySource: SourceFileBucket + "/"+ GlueJobDefinition,
-    Key: GlueJobDefinition
-  };
-
-  S3.copyObject(params, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else{
-      console.log("Done uploadGlueJobDefinition");
-    }
-  });
- }
 
 // Send response to the pre-signed S3 URL
 function sendResponse(event, context, responseStatus, responseData) {

@@ -869,6 +869,6 @@ Outputs:
   sendQuizEventUrl:
     Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
   DeliveryStreamName:
-    Value: !Sub '${AWS::StackName}-playerlogs-stream' 
+    Value: !Sub '${AWS::StackName}-playerlogs-stream'
   LiveURL:
     Value: !Ref LiveURL
