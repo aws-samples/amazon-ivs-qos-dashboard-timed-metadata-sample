@@ -49,8 +49,6 @@ copycodeww:
 	@for region in $(regions) ; do \
 	  echo $$region; echo $(bucket);\
 		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/lambda-functions/ui-deployment/user-interfaces/$(version)/ --acl public-read --profile $(profile); \
-		aws s3 cp cloudformation/swagger-apigateway.yaml s3://$(bucket)-$$region/swagger-apigateway.yaml --acl public-read --profile $(profile); \
-		aws s3 cp cloudformation/etl/player_log_job s3://$(bucket)-$$region/qos/etl/$(version)/ --acl public-read --profile $(profile); \
 		done
 
 copytemplateww:
@@ -77,10 +75,7 @@ deploy:
 
 clean:
 	rm -r dist/*
-	rm -r lambda-functions/activeuser-appsync-function/node_modules/*
 	rm -r lambda-functions/deploy-function/node_modules/*
-	rm -r lambda-functions/playersummary-cw-function/node_modules/*
-	rm -r lambda-functions/quizsummary-cw-function/node_modules/*
 
 cleandocker:
 	docker rmi --force amazonlinux:${docker_image}
