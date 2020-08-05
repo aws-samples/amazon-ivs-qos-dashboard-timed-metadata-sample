@@ -69,7 +69,7 @@ distpackage:
 		aws cloudformation package --template-file cloudformation/deployment_package.yaml --s3-bucket $(bucket)-$$region --s3-prefix deploy/lambda-functions --output-template-file cloudformation/deployment.yaml --profile $(profile); \
 
 deploy:
-	sam package -t cloudformation/sam_input.yaml --s3-bucket $(bucket)-eu-west-1 --s3-prefix sam/lambda-functions/ --output-template-file cloudformation/deployment.yaml --profile $(profile); \
+	aws package --template-file cloudformation/sam_input.yaml --s3-bucket $(bucket)-eu-west-1 --s3-prefix sam/lambda-functions --output-template-file cloudformation/deployment.yaml --profile $(profile); \
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
 	--parameter-overrides DeployDemoUI=true LiveURL=
