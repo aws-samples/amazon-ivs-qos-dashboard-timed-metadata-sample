@@ -17,7 +17,6 @@ Building this project requires the following dependencies to be installed on you
 - make
 - Docker
 - AWS CLI (https://aws.amazon.com/cli/)
-- AWS SAM CLI (https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
 ## Build Instructions
 

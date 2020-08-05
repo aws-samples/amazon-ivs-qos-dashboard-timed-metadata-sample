@@ -6,7 +6,7 @@ Makefile
 node_modules/
 dist/*.zip
 cloudformation/deployment.yaml
-cloudformation/sam_input.yaml
+cloudformation/deployment_package.yaml
 
 # Python dependencies
 package/
