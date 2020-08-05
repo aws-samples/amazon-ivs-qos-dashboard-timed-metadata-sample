@@ -737,19 +737,19 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
   EventIngestApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
-      - EventIngestApiPUT
+      - EventIngestApiPOST
       - EventIngestApiOPTIONS
     Properties:
       RestApiId: !Ref EventIngestApi
       StageName: prod2
 
-  EventIngestApiPUT:
+  EventIngestApiPOST:
     DependsOn:
       - PlayerLogsDeliveryStream
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
-      HttpMethod: PUT
+      HttpMethod: POST
       Integration:
         Type: AWS
         Credentials: !GetAtt EventIngestEndpointRole.Arn
