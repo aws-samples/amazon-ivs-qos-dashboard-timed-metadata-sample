@@ -276,7 +276,7 @@ const cardInnerEl = $(".card-inner");
 
       $.ajax({
         url: endpoint,
-        type: 'PUT',
+        type: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
