@@ -57,7 +57,8 @@ copytemplateww:
 	@for region in $(regions);do \
 		echo $$region;	echo $(bucket); \
 		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" cloudformation/deployment_template.yaml > cloudformation/deployment_package.yaml; \
-aws cloudformation package --template-file cloudformation/deployment_package.yaml --s3-bucket $(bucket)-$$region --s3-prefix deploy/lambda-functions --output-template-file cloudformation/deployment.yaml --profile $(profile); \		aws s3 cp cloudformation/deployment.yaml s3://$(bucket)-$$region/qos/cloudformation/$(version)/ --acl public-read --profile $(profile); \
+		aws cloudformation package --template-file cloudformation/deployment_package.yaml --s3-bucket $(bucket)-$$region --s3-prefix deploy/lambda-functions --output-template-file cloudformation/deployment.yaml --profile $(profile); \
+		aws s3 cp cloudformation/deployment.yaml s3://$(bucket)-$$region/qos/cloudformation/$(version)/ --acl public-read --profile $(profile); \
 		done
 
 template:
