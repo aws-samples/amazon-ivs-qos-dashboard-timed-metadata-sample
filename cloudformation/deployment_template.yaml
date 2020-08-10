@@ -397,7 +397,6 @@ Resources:
                 - athena.amazonaws.com
 
   AddPartitionFunction:
-
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: ../dist/add-partition-function.zip
@@ -472,27 +471,71 @@ Resources:
             Resource:
                 - !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
                 - !Sub 'arn:aws:s3:::${PlayerLogsBucket}/*'
+          - Effect: "Allow"
+            Action:
+              - "glue:GetTable"
+              - "glue:GetTableVersion"
+              - "glue:GetTableVersions"
+            Resource: 
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}_qos_db/player_logs"
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/${AWS::StackName}_qos_db"
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
+          - Effect: Allow
+            Action:
+              - "logs:PutLogEvents"
+            Resource:
+              - "*" # this needs to be adjusted to the CWLog Stream
       Roles:
         - !Ref DeliveryRole
 
+  KinesisFirehoseLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ivsqos/${AWS::StackName}"
+      RetentionInDays: 30
+
+  KinesisFirehoseLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref KinesisFirehoseLogGroup
+      LogStreamName: "playerlogstream"
+
   PlayerLogsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
+    #Condition: NoElasticSearchCondition
     DependsOn:
       - PlayerLogsBucket
+      - PlayerLogsTable
+      - DeliveryPolicy
     Properties:
       DeliveryStreamType: DirectPut
       DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-stream'
-      S3DestinationConfiguration:
+      ExtendedS3DestinationConfiguration:
         BucketARN: !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
         BufferingHints:
           IntervalInSeconds: 60
-          SizeInMBs: 1
+          SizeInMBs: 64
         CompressionFormat: UNCOMPRESSED
+        DataFormatConversionConfiguration:
+          SchemaConfiguration: 
+            CatalogId: !Ref AWS::AccountId 
+            RoleARN: !GetAtt DeliveryRole.Arn
+            DatabaseName: !Ref GlueDatabase 
+            TableName: !Ref PlayerLogsTable 
+            Region: !Ref AWS::Region
+            VersionId: LATEST 
+          InputFormatConfiguration: 
+            Deserializer: 
+              OpenXJsonSerDe: {}
+          OutputFormatConfiguration: 
+            Serializer: 
+              ParquetSerDe: {}
+          Enabled: True
         Prefix: player_logs/
         RoleARN: !GetAtt DeliveryRole.Arn
         CloudWatchLoggingOptions:
           Enabled: true
-          LogGroupName: "deliverystream"
+          LogGroupName: !Sub "/ivsqos/${AWS::StackName}"
           LogStreamName: "playerlogstream"
 
   KinesisAnalyticsRole:
@@ -754,7 +797,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Type: AWS
         Credentials: !GetAtt EventIngestEndpointRole.Arn
         IntegrationHttpMethod: POST
-        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecordBatch"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecord"
         IntegrationResponses:
           -
             StatusCode: '200'
@@ -762,18 +805,21 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json: |
-            {
-            "DeliveryStreamName": "$input.path('$.DeliveryStreamName')",
-            "Records": [
-              #foreach($elem in $input.path('$.Records'))
+          application/json: 
+            !Sub |
+              #set($payload = $util.parseJson($input.json('$.record.Data')))
+              #set($data = "{
+                #foreach($mapEntry in $payload.entrySet())
+                  ""$mapEntry.key"": ""$mapEntry.value"",
+                #end
+                ""event_time"": ""$context.requestTimeEpoch""
+              }")
               {
-                  #set($json = $util.parseJson($elem.Data))
-                  #set($json.event_time = $context.requestTimeEpoch)
-                  "Data": "$util.base64Encode($json)"
-              }#if($foreach.hasNext),#end
-              #end
-            ]}
+                "DeliveryStreamName": "${PlayerLogsDeliveryStream}",
+                "Record": {
+                  "Data": "$util.base64Encode($data)"
+                }
+              }
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:

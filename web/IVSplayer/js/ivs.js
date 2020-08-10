@@ -266,12 +266,12 @@ const cardInnerEl = $(".card-inner");
 
   function pushPayload(endpoint, payload){
       let wrapPayload = {};
-      wrapPayload.DeliveryStreamName = config.DeliveryStreamName;
-      wrapPayload.Records = [];
-      let record = {
-          Data: JSON.stringify(payload) + "\n"
+      //wrapPayload.DeliveryStreamName = config.DeliveryStreamName;
+      //wrapPayload.Records = [];
+      wrapPayload.record = {
+          Data: payload
       };
-      wrapPayload.Records.push(record);
+      //wrapPayload.Records.push(record);
       console.log("Record :%j",wrapPayload);
 
       $.ajax({
