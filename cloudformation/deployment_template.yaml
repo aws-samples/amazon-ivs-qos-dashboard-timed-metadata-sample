@@ -439,6 +439,18 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
+  KinesisFirehoseLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ivsqos/${AWS::StackName}"
+      RetentionInDays: 30
+
+  KinesisFirehoseLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref KinesisFirehoseLogGroup
+      LogStreamName: "playerlogstream"
+
   DeliveryRole:
     Type: AWS::IAM::Role
     Properties:
@@ -472,6 +484,11 @@ Resources:
             Resource:
                 - !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
                 - !Sub 'arn:aws:s3:::${PlayerLogsBucket}/*'
+          - Effect: Allow
+            Action:
+              - "logs:PutLogEvents"
+            Resource:
+              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
       Roles:
         - !Ref DeliveryRole
 
@@ -492,8 +509,8 @@ Resources:
         RoleARN: !GetAtt DeliveryRole.Arn
         CloudWatchLoggingOptions:
           Enabled: true
-          LogGroupName: "deliverystream"
-          LogStreamName: "playerlogstream"
+          LogGroupName: !Ref KinesisFirehoseLogGroup
+          LogStreamName: !Ref KinesisFirehoseLogStream
 
   KinesisAnalyticsRole:
     Type: AWS::IAM::Role
@@ -762,18 +779,22 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json: |
-            {
-            "DeliveryStreamName": "$input.path('$.DeliveryStreamName')",
-            "Records": [
-              #foreach($elem in $input.path('$.Records'))
-              {
-                  #set($json = $util.parseJson($elem.Data))
-                  #set($json.event_time = $context.requestTimeEpoch)
-                  "Data": "$util.base64Encode($json)"
-              }#if($foreach.hasNext),#end
+          application/json: 
+            !Sub |
+              #set($data = $input.path('$'))
+              #set($records = $input.path('$.Records'))
+              #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsDeliveryStream}"", ""Records"": [{ ")
+              #foreach($rec in $records)
+                #set($res = "{")
+                #foreach($mapEntry in $rec.Data.entrySet())
+                  #set($res = "$res""$mapEntry.key"":")
+                  #set($res = "$res""$mapEntry.value"",")
+                #end
+                #set($res = "$res""event_time"": ""$context.requestTimeEpoch""")
+                #set($res = "$res}")
+                #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
               #end
-            ]}
+              $output
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
