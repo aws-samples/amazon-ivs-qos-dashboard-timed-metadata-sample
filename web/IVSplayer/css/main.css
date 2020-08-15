@@ -1,5 +1,63 @@
 /* Reset */
-*,*::before,*::after{box-sizing:border-box}ul[class],ol[class]{padding:0}body,h1,h2,h3,h4,p,ul[class],ol[class],figure,blockquote,dl,dd{margin:0}html{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}ul[class],ol[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img{max-width:100%;display:block}article>*+*{margin-top:1em}input,button,textarea,select{font:inherit}@media (prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+ul[class],
+ol[class] {
+  padding: 0;
+}
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+ul[class],
+ol[class],
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+}
+ul[class],
+ol[class] {
+  list-style: none;
+}
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+article > * + * {
+  margin-top: 1em;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* Variables */
 :root {
@@ -26,12 +84,13 @@ body {
 
 body {
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Ubuntu, "Helvetica Neue", sans-serif;
   user-select: none;
 }
 
 #app {
-  background: linear-gradient(180deg, #232f3e 75.66%, #503640 100%);
+  background: #253f93;
   height: 100%;
 }
 
@@ -52,7 +111,7 @@ body {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   border-radius: var(--radius);
-  box-shadow: 0 6px 30px rgba(0,0,0,.3);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
   z-index: 1;
 }
 
@@ -98,7 +157,7 @@ video {
 
 .card.drop {
   opacity: 0;
-  transform: translate3d(0, 300px, -20px) scale(0.92) rotate(-15deg);
+  transform: translate3d(0, 200px, -20px) scale(0.92);
 }
 
 h2 {
@@ -169,15 +228,37 @@ h2 {
 }
 
 /* Utility - Position */
-.pos-absolute { position: absolute !important; }
-.pos-fixed { position: fixed !important; }
-.pos-relative { position: relative !important; }
-.top-0 { top: 0 !important; }
-.bottom-0 { bottom: 0 !important; }
+.pos-absolute {
+  position: absolute !important;
+}
+.pos-fixed {
+  position: fixed !important;
+}
+.pos-relative {
+  position: relative !important;
+}
+.top-0 {
+  top: 0 !important;
+}
+.bottom-0 {
+  bottom: 0 !important;
+}
 
 /* Utility - Width/Height */
-.full-width { width: 100%; }
-.full-height { height: 100%; }
+.full-width {
+  width: 100%;
+}
+.full-height {
+  height: 100%;
+}
+
+/* Utility – Show/Hide */
+.show {
+  transition: opacity 180ms;
+}
+.hide {
+  opacity: 0;
+}
 
 /* Animations */
 @keyframes blink {
@@ -198,7 +279,7 @@ h2 {
   }
 }
 
-
+/* Mediaqueries */
 @media (max-width: 767px) {
   h2 {
     font-size: 20px;
