@@ -25,9 +25,43 @@ Parameters:
       - true
       - false
 
+  PushToElasticSearch:
+    Type: String
+    Description: Enabling this along with specifying the ES Domain will push logs to ES
+    Default: false
+    AllowedValues:
+      - true
+      - false
+
+  ElasticSearchDomainArn:
+    Type: String
+    Description: ElasticSearch Domain Arn
+
+  ElasticSearchIndexName:
+    Type: String
+    Description: ElasticSearch Index Name
+    Default: esindex
+
+  ElasticSearchIndexRotation:
+    Type: String
+    Description: Index Rotation Interval
+    AllowedValues:
+      - None
+      - Hour
+      - Day
+      - Week
+      - Month
+
+  # ElasticSearchType:
+  #   Type: String
+  #   Description: ElasticSearch Type
+  #   Default: FromFirehose
+
 Conditions:
   DeployDemoUICondition: !Equals [!Ref DeployDemoUI, true]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
+  PushToElasticSearchCondition: !Equals [!Ref PushToElasticSearch, true]
+  NoElasticSearchCondition: !Equals [!Ref PushToElasticSearch, false]
 
 Resources:
   SourceBucket:
@@ -267,7 +301,8 @@ Resources:
     DependsOn:
       - CFDistribution
     Properties:
-      DeliveryStreamName: !Ref PlayerLogsDeliveryStream
+      DeliveryStreamName: 
+        !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream]
       PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
       AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
       Region: !Sub ${AWS::Region}
@@ -397,7 +432,6 @@ Resources:
                 - athena.amazonaws.com
 
   AddPartitionFunction:
-
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: ../dist/add-partition-function.zip
@@ -450,6 +484,12 @@ Resources:
     Properties:
       LogGroupName: !Ref KinesisFirehoseLogGroup
       LogStreamName: "playerlogstream"
+  
+  KinesisFirehoseESLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref KinesisFirehoseLogGroup
+      LogStreamName: "elasticsearchDelivery"
 
   DeliveryRole:
     Type: AWS::IAM::Role
@@ -468,6 +508,7 @@ Resources:
 
   DeliveryPolicy:
     Type: AWS::IAM::Policy
+    Condition: NoElasticSearchCondition
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
@@ -494,8 +535,10 @@ Resources:
 
   PlayerLogsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: NoElasticSearchCondition
     DependsOn:
       - PlayerLogsBucket
+      - DeliveryPolicy
     Properties:
       DeliveryStreamType: DirectPut
       DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-stream'
@@ -511,6 +554,103 @@ Resources:
           Enabled: true
           LogGroupName: !Ref KinesisFirehoseLogGroup
           LogStreamName: !Ref KinesisFirehoseLogStream
+
+  ESDeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Condition: PushToElasticSearchCondition
+    Properties:
+      PolicyName: firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+                - !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
+                - !Sub 'arn:aws:s3:::${PlayerLogsBucket}/*'
+          - Effect: Allow
+            Action:
+              - "es:DescribeElasticsearchDomain"
+              - "es:DescribeElasticsearchDomains"
+              - "es:DescribeElasticsearchDomainConfig"
+              - "es:ESHttpPost"
+              - "es:ESHttpPut"
+            Resource:
+              - !Ref ElasticSearchDomainArn
+              - !Sub "${ElasticSearchDomainArn}/*"
+              - "*"
+          - Effect: Allow
+            Action:
+              - "es:ESHttpGet"
+            Resource:
+              - !Sub "${ElasticSearchDomainArn}/_all/_settings"
+              - !Sub "${ElasticSearchDomainArn}/_cluster/stats"
+              - !Sub "${ElasticSearchDomainArn}/index-name*/_mapping/type-name"
+              - !Sub "${ElasticSearchDomainArn}/_nodes"
+              - !Sub "${ElasticSearchDomainArn}/_nodes/stats"
+              - !Sub "${ElasticSearchDomainArn}/_nodes/*/stats"
+              - !Sub "${ElasticSearchDomainArn}/_stats"
+              - !Sub "${ElasticSearchDomainArn}/index-name*/_stats"
+              - "*"
+          - Effect: Allow
+            Action:
+              - "logs:PutLogEvents"
+            Resource:
+              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
+              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
+          # - Effect: Allow
+          #   Action:
+          #     - "lambda:InvokeFunction"
+          #     - "lambda:GetFunctionConfiguration"
+          #   Resource:
+          #     - !Sub "${ProcessKinesisFirehoseFunction.Arn}:$LATEST"
+      Roles:
+        - !Ref DeliveryRole
+
+  PlayerLogsESDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: PushToElasticSearchCondition
+    DependsOn:
+      - PlayerLogsBucket
+      - ESDeliveryPolicy
+    Properties:
+      DeliveryStreamType: DirectPut
+      DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-es-stream'
+      ElasticsearchDestinationConfiguration:
+        BufferingHints: 
+          IntervalInSeconds: 60 
+          SizeInMBs: 5
+        CloudWatchLoggingOptions: 
+          Enabled: true 
+          LogGroupName: !Ref KinesisFirehoseLogGroup
+          LogStreamName: !Ref KinesisFirehoseESLogStream
+        DomainARN: !Ref ElasticSearchDomainArn
+        IndexName: !Ref ElasticSearchIndexName
+        IndexRotationPeriod: "NoRotation"
+        #Types are deprecated in ES7.7
+        #TypeName: !Ref ElasticSearchType
+        RetryOptions: 
+          DurationInSeconds: 60
+        RoleARN: !GetAtt DeliveryRole.Arn
+        S3BackupMode: "AllDocuments" 
+        S3Configuration: 
+          BucketARN: !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
+          BufferingHints: 
+            IntervalInSeconds: 60
+            SizeInMBs: 50
+          CompressionFormat: "UNCOMPRESSED" 
+          Prefix: player_logs/ 
+          RoleARN: !GetAtt DeliveryRole.Arn
+          CloudWatchLoggingOptions: 
+            Enabled: true 
+            LogGroupName: !Ref KinesisFirehoseLogGroup
+            LogStreamName: !Ref KinesisFirehoseLogStream
 
   KinesisAnalyticsRole:
     Type: AWS::IAM::Role
@@ -620,7 +760,8 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
                 JSONMappingParameters:
                   RecordRowPath: "$"
           KinesisFirehoseInput:
-            ResourceARN: !GetAtt PlayerLogsDeliveryStream.Arn
+            ResourceARN: 
+              !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
             RoleARN: !GetAtt KinesisAnalyticsRole.Arn
 
   PlayerSummaryApplication:
@@ -761,8 +902,8 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       StageName: prod2
 
   EventIngestApiPOST:
-    DependsOn:
-      - PlayerLogsDeliveryStream
+    #DependsOn:
+    #  - PlayerLogsDeliveryStream
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
@@ -779,22 +920,31 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json: 
-            !Sub |
-              #set($data = $input.path('$'))
-              #set($records = $input.path('$.Records'))
-              #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsDeliveryStream}"", ""Records"": [{ ")
-              #foreach($rec in $records)
-                #set($res = "{")
-                #foreach($mapEntry in $rec.Data.entrySet())
-                  #set($res = "$res""$mapEntry.key"":")
-                  #set($res = "$res""$mapEntry.value"",")
+          application/json:
+            !If 
+              - PushToElasticSearchCondition
+              - !Sub |
+                #set($data = $input.path('$'))
+                #set($records = $input.path('$.Records'))
+                #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsESDeliveryStream}"", ""Records"": [{ ")
+                #foreach($rec in $records)
+                  #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #set($res = "$res""event_time"": $context.requestTimeEpoch")
+                  #set($res = "$res}")
+                  #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
                 #end
-                #set($res = "$res""event_time"": ""$context.requestTimeEpoch""")
-                #set($res = "$res}")
-                #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
-              #end
-              $output
+                $output
+              - !Sub |
+                #set($data = $input.path('$'))
+                #set($records = $input.path('$.Records'))
+                #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsDeliveryStream}"", ""Records"": [{ ")
+                #foreach($rec in $records)
+                  #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #set($res = "$res""event_time"": $context.requestTimeEpoch")
+                  #set($res = "$res}")
+                  #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
+                #end
+                $output
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
@@ -890,6 +1040,8 @@ Outputs:
   sendQuizEventUrl:
     Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
   DeliveryStreamName:
-    Value: !Sub '${AWS::StackName}-playerlogs-stream'
+    Value: !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream ]
   LiveURL:
     Value: !Ref LiveURL
+  DeliveryRoleArn:
+    Value: !GetAtt DeliveryRole.Arn
