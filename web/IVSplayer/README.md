@@ -14,13 +14,13 @@ This web sample player is written based on IVS player SDK 1.0.0, and can
 
 ### 2.1 Host Nginx on Your Local Computer
 
-<span style="color:blue">**Step 1:**</span> On Mac, you can install Nginx with Homebrew by running:
+**Step 1:** On Mac, you can install Nginx with Homebrew by running:
 
 - ```$ brew update```
 
 - ```$ brew install nginx```
 
-<span style="color:blue">**Step 2:**</span> Point the root directory to the folder of this sample player, e.g., */Users/yuesshen/aws-samples/amazon-ivs-qos-dashboard-timed-metadata-sample/web/IVSplayer*
+**Step 2:** Point the root directory to the folder of this sample player, e.g., */Users/yuesshen/aws-samples/amazon-ivs-qos-dashboard-timed-metadata-sample/web/IVSplayer*
 
 - Modify */usr/local/etc/nginx/nginx.conf* as
 
@@ -38,7 +38,7 @@ http {
     ...
 ```
 
-<span style="color:blue">**Step 3:**</span> Run Nginx in background
+**Step 3:** Run Nginx in background
 
 - To start Nginx, run ```sudo brew services start nginx```
 
@@ -120,15 +120,15 @@ The data collected with the QoS events can be leveraged to generate two types of
 
 Field Name | Data Type | Note
 ---------- | --------- | ----
-<span style="color:blue">// event's timestamp</span> |  |  
+**// event's timestamp** |  |  
 receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis
-<span style="color:blue">// event type (QoS, timed metadata feedback, etc.)</span> |  |  
+**// event type (QoS, timed metadata feedback, etc.)** |  |  
 metric_type | string | "PLAYBACK_SUMMARY" for QoS event
-<span style="color:blue">// client platform and content</span> |  |  
+**// client platform and content** |  |  
 clientPlatform | string | e.g., “web”, “android”, “ios”
 channelWatched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel
 isLive | boolean |  
-<span style="color:blue">// playback summary</span> |  |  
+**// playback summary** |  |  
 errorCount | integer |  
 playingTimeMs | integer | the duration (in ms) of the player SDK staying in the "PLAYING" state
 bufferingTimeMs | integer | the duration (in ms) of the player SDK staying in the "BUFFERING" state
@@ -157,11 +157,11 @@ When a viewer receives a multiple-choice question and select an answer, an timed
 
 Field Name | Data Type | Note
 ---------- | --------- | ----
-<span style="color:blue">// event's timestamp</span> |  |  
+**// event's timestamp** |  |  
 receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis
-<span style="color:blue">// event type (QoS, timed metadata feedback, etc.)</span> |  |  
+**// event type (QoS, timed metadata feedback, etc.)** |  |  
 metric_type | string | "QUIZ_ANSWER" in this example
-<span style="color:blue">// client platform and content</span> |  |  
+**// client platform and content** |  |  
 question | string | e.g., "Which team won the 2019 World Series?"
 answer | string | e.g., "Washington Nationals"
 
