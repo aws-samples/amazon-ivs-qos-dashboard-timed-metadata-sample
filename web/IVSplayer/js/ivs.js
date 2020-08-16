@@ -317,7 +317,6 @@ const cardInnerEl = document.getElementById("card-inner");
 
   function pushPayload(endpoint, payload){
     let wrapPayload = {};
-    // (ask Jai) wrapPayload.DeliveryStreamName = config.DeliveryStreamName;
     wrapPayload.Records = [];
     let record = {
         Data: payload
