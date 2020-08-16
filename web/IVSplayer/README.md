@@ -16,9 +16,9 @@ This sample web player is written based on IVS player SDK 1.0.0, and can
 
 **Step 1:** On Mac, you can install Nginx with Homebrew by running:
 
-- ```$ brew update```
+- ```$ brew update```;
 
-- ```$ brew install nginx```
+- ```$ brew install nginx```.
 
 **Step 2:** Point the root directory to the folder of this sample web player, e.g., */Users/yuesshen/aws-samples/amazon-ivs-qos-dashboard-timed-metadata-sample/web/IVSplayer*
 
@@ -40,11 +40,11 @@ http {
 
 **Step 3:** Run Nginx in background
 
-- To start Nginx, run ```sudo brew services start nginx```
+- To start Nginx, run ```sudo brew services start nginx```;
 
-- After you are done with your experiment, run ```sudo brew services stop nginx``` to stop Nginx
+- After you are done with your experiment, run ```sudo brew services stop nginx``` to stop Nginx.
 
-### 2.2 Run the Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
+### 2.2 Run the Sample Web Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
 
 In Chrome, type *http://localhost:8080/* in the web address bar, the sample web player will play a test channel with multiple-choice questions (see below). If your selected answer is correct, the answer window will turn green, otherwise it will be red.
 
@@ -56,17 +56,17 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 - Select "Console";
 
-- Type "sendQuizAnswer" in "Filter";
+- Type *"sendQuizAnswer"* in "Filter";
 
 - See the timed-metadata-feedback events including the question and the selected answer (see below).
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_2.png)
 
-Every minute, the sample web player also assembles a playback QoS event and send to the the backend. To see the console output for these events, similar as above and
+Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
 
-- Type "sendQoSEvent" in "Filter";
+- Type *"sendQoSEvent"* in "Filter";
 
-- See the playback QoS events which is a summary of the past minute's playback state (see below).
+- See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_3.png)
 
