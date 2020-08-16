@@ -1,4 +1,4 @@
-# Amazon IVS Quality-Of-Service and Timed-Metadata-Feedback Dashboard - Sample Web Player
+# Sample Web Player of Amazon IVS Quality-Of-Service and Timed-Metadata-Feedback Dashboard
 
 ## 1. What Does the Sample Player Do
 
@@ -8,7 +8,7 @@ This web sample player is written based on IVS player SDK 1.0.0, and can
 
 - Based on the player SDK's events, assemble playback QoS events and send them to an IVS QoS dashboard backend;
 
-- Render multiple-choice questions based on the timed metadata embedded in an IVS live (or VOD) video, assemble events of question/answer and send them to an IVS timed-metadata-feedback dashboard backend.
+- Render multiple-choice questions based on the timed metadata embedded in an IVS live (or VOD) video, assemble question/answer events and send them to an IVS timed-metadata-feedback dashboard backend.
 
 ## 2. Play With the Sample Player Yourself
 
@@ -42,11 +42,21 @@ http {
 
 - To start Nginx, run ```sudo brew services start nginx```
 
-- To stop Nginx, run ```sudo brew services stop nginx```
+- After you are done with your experiment, run ```sudo brew services stop nginx``` to stop Nginx
 
-### 2.2 Run the Player
+### 2.2 Run the Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
+
+In Chrome, type *http://localhost:8080/* in the web address bar, the sample player will play a test channel with multiple-choice questions:
+
+![Screenshot of playing the test channel](./README_images/section2dot2_1.png)
 
 ...
+
+![Screenshot of playing the test channel](./README_images/section2dot2_2.png)
+
+...
+
+![Screenshot of playing the test channel](./README_images/section2dot2_3.png)
 
 ## 3. Deep Dive Into the Design and the Source Code
 
