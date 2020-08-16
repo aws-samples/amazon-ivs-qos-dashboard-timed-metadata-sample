@@ -1,8 +1,8 @@
 # Sample Web Player of Amazon IVS Quality-Of-Service and Timed-Metadata-Feedback Dashboard
 
-## 1. What Does the Sample Player Do
+## 1. What Does the Sample Web Player Do
 
-This web sample player is written based on IVS player SDK 1.0.0, and can
+This sample web player is written based on IVS player SDK 1.0.0, and can
 
 - Play an IVS live stream (or an IVS VOD asset);
 
@@ -10,7 +10,7 @@ This web sample player is written based on IVS player SDK 1.0.0, and can
 
 - Render multiple-choice questions based on the timed metadata embedded in an IVS live (or VOD) video, assemble question/answer events and send them to an IVS timed-metadata-feedback dashboard backend.
 
-## 2. Play With the Sample Player Yourself
+## 2. Play With the Sample Web Player Yourself
 
 ### 2.1 Host Nginx on Your Local Computer
 
@@ -20,7 +20,7 @@ This web sample player is written based on IVS player SDK 1.0.0, and can
 
 - ```$ brew install nginx```
 
-**Step 2:** Point the root directory to the folder of this sample player, e.g., */Users/yuesshen/aws-samples/amazon-ivs-qos-dashboard-timed-metadata-sample/web/IVSplayer*
+**Step 2:** Point the root directory to the folder of this sample web player, e.g., */Users/yuesshen/aws-samples/amazon-ivs-qos-dashboard-timed-metadata-sample/web/IVSplayer*
 
 - Modify */usr/local/etc/nginx/nginx.conf* as
 
@@ -46,7 +46,7 @@ http {
 
 ### 2.2 Run the Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
 
-In Chrome, type *http://localhost:8080/* in the web address bar, the sample player will play a test channel with multiple-choice questions (see below). If your selected answer is correct, the answer window will turn green, otherwise it will be red.
+In Chrome, type *http://localhost:8080/* in the web address bar, the sample web player will play a test channel with multiple-choice questions (see below). If your selected answer is correct, the answer window will turn green, otherwise it will be red.
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_1.png)
 
@@ -62,7 +62,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_2.png)
 
-Every minute, the sample player also assembles a playback QoS event and send to the the backend. To see the console output for these events, similar as above and
+Every minute, the sample web player also assembles a playback QoS event and send to the the backend. To see the console output for these events, similar as above and
 
 - Type "sendQoSEvent" in "Filter";
 
@@ -139,9 +139,9 @@ liveLatencyMs | integer | latency in ms based on "getLiveLatency()" covering the
 
 #### 3.1.3 Implementation
 
-Search for "QoS event" in ivs.js and see the implementation
+Search for "QoS event" in ivs.js and see the implementation of the following logic:
 
-...
+- ...
 
 #### 3.1.4 Test Plan
 
