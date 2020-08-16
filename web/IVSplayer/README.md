@@ -74,11 +74,11 @@ Furthermore, the sample web player also assembles a playback QoS event and send 
 
 In *.js/config.js*, replace the default values with the playback URL of your IVS live (or VOD) video and the Gateway API end points of your backend:
 
-- ```"PlaybackURL":``` an IVS live channel (or VOD title)'s playback URL
+- ```"PlaybackURL":``` an IVS live channel (or VOD title)'s playback URL;
 
-- ```"SendQoSEventURL":``` end point for sending playback QoS (i.e., playback summary) events
+- ```"SendQoSEventURL":``` end point for sending playback QoS (i.e., playback summary) events;
 
-- ```"SendQuizAnswerURL":``` end point for sending timed metadata feedback (e.g., quiz answer) events
+- ```"SendQuizAnswerURL":``` end point for sending timed metadata feedback (e.g., quiz answer) events.
 
 ## 3. Deep Dive Into the Design and the Source Code
 
@@ -88,33 +88,33 @@ In *.js/config.js*, replace the default values with the playback URL of your IVS
 
 Each player QoS event
 
-- is about one viewer on one particular channel; and
+- is about one viewer watching one particular channel; and
 
-- covers maximum one (adjustable, tradeoff between latency and cost) minute.
+- covers maximum one minute (which is adjustable, and is a tradeoff between latency and cost).
 
 Furthermore, if the player state is either “IDLE” or “ENDED” throughout the entire minute, no event will be sent for this minute.
 
-The data collected with the QoS events can be leveraged to generate two types of data:
+The data collected within the QoS events can be leveraged to generate two types of metrics:
 
 - User activity:
 
-  - Concurrent viewers
+  - Concurrent viewers;
 
-  - Client platform type
+  - Client platform type;
 
-  - Duration watched
+  - Duration watched.
 
 - QoS
 
-  - Rendition watched
+  - Rendition watched;
 
-  - Startup latency (delay from loading the playback URL to the first video frame rendered)
+  - Startup latency (delay from loading the playback URL to the first video frame rendered);
 
-  - Live latency (delay from ingest to playback, i.e., end-to-end latency excluding the broadcast tool's latency)
+  - Live latency (delay from ingest to playback, i.e., end-to-end latency excluding the broadcast tool's latency);
 
-  - Playback buffering
+  - Playback buffering;
 
-  - Playback errors
+  - Playback errors.
 
 #### 3.1.2 JSON Schema
 
