@@ -149,13 +149,15 @@ Search for *"QoS event"* in *ivs.js* and see the implementation of the following
 
 - Subroutine of assembing an QoS event and sending it to the QoS dashboard backend (from line 266);
 
-- Update work variables (whose values are used in assembing QoS events), when receiving player-state-change or playback-error events from the IVS player SDK (from line 57). See below for the transition of player state:
+- Update work variables (whose values are used in assembing QoS events), when receiving a player-state-change (see below) or playback-error event from the IVS player SDK (from line 57).
 
 ![IVS player state transition](./README_images/section3dot1dot3_1.jpg)
 
 #### 3.1.4 Test Plan
 
-...
+| Test Case | Test Steps | Expected Results |
+| --------- | ---------- | ---------------- |
+| ... | ... | ... |
 
 ### 3.2 Timed-Metadata-Feedback Events
 
