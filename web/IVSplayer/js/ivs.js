@@ -296,7 +296,6 @@ const cardInnerEl = document.getElementById("card-inner");
 
     if (url != "") {
       pushPayload(url,myJson);
-      // (to implement, will ask Jai)
     }
 
     console.log("sendQoSEvent ", JSON.stringify(myJson), "to", url);
@@ -310,7 +309,6 @@ const cardInnerEl = document.getElementById("card-inner");
     myJson.answer = answer;
 
     if (url != "") {
-      // (to implement, will ask Jai)
       pushPayload(url,myJson);
     }
 
