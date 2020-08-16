@@ -262,7 +262,7 @@ const cardInnerEl = document.getElementById("card-inner");
 
   waitMessage.style.display = "";
 
-  // === subroutines for sending QoS/timed-metadata events ===
+  // === subroutines for sending QoS and timed metadata events ===
   // Send QoS event
   function sendQoSEvent(url) {
     var myJson = {};
@@ -337,6 +337,6 @@ const cardInnerEl = document.getElementById("card-inner");
       console.log("Error");
     });
   }
-  // === subroutines for sending events ===
+  // === subroutines for sending QoS and timed metadata events ===
 
 })(window.IVSPlayer);
