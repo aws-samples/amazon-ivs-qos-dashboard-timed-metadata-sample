@@ -60,7 +60,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 - See the timed-metadata-feedback events including the question and the selected answer (see below).
 
-![Screenshot of playing the test channel](./README_images/section2dot2_2.png)
+![Screenshot of console output for timed-metadata-feedback events](./README_images/section2dot2_2.png)
 
 Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
 
@@ -68,7 +68,7 @@ Furthermore, the sample web player also assembles a playback QoS event and send 
 
 - See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
-![Screenshot of playing the test channel](./README_images/section2dot2_3.png)
+![Screenshot of console output for playback QoS events](./README_images/section2dot2_3.png)
 
 ### 2.3 Customize Your IVS Video and Dashboard Backend
 
@@ -139,9 +139,19 @@ The data collected within the QoS events can be leveraged to generate two types 
 
 #### 3.1.3 Implementation
 
-Search for "QoS event" in ivs.js and see the implementation of the following logic:
+Search for *"QoS event"* in *ivs.js* and see the implementation of the following logic:
 
-- ...
+- Definition of the work variables, right after the creation of ```IVSPlayer``` (from line 39);
+
+- Send off the dangling QoS event and reset the work variables before loading a new video (from line 147);
+
+- Send off a QoS event and reset some work varibles every minute (from line 186);
+
+- Subroutine of assembing an QoS event and sending it to the QoS dashboard backend (from line 266);
+
+- Update work variables (whose values are used in assembing QoS events), when receiving player-state-change or playback-error events from the IVS player SDK (from line 57). See below for the transition of player state:
+
+![IVS player state transition](./README_images/section3dot1dot3_1.png)
 
 #### 3.1.4 Test Plan
 
@@ -167,7 +177,7 @@ When a viewer receives a multiple-choice question and select an answer, an timed
 
 #### 3.2.3 Implementation
 
-Search for "timed metadata" in ivs.js and see how ```sendQuizAnswer()``` is called and implemented.
+Search for *"timed metadata"* in *ivs.js* and see how ```sendQuizAnswer()``` is called and implemented.
 
 #### 3.2.4 Test Plan
 
