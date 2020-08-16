@@ -151,7 +151,7 @@ Search for *"QoS event"* in *ivs.js* and see the implementation of the following
 
 - Update work variables (whose values are used in assembing QoS events), when receiving player-state-change or playback-error events from the IVS player SDK (from line 57). See below for the transition of player state:
 
-![IVS player state transition](./README_images/section3dot1dot3_1.png)
+![IVS player state transition](./README_images/section3dot1dot3_1.jpg)
 
 #### 3.1.4 Test Plan
 
