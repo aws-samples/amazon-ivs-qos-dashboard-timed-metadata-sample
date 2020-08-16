@@ -155,15 +155,15 @@ When a viewer receives a multiple-choice question and select an answer, an timed
 
 #### 3.2.2 JSON Schema
 
-Field Name | Data Type | Note
----------- | --------- | ----
-**// event's timestamp** |  |  
-receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis
-**// event type (QoS, timed metadata feedback, etc.)** |  |  
-metric_type | string | "QUIZ_ANSWER" in this example
-**// client platform and content** |  |  
-question | string | e.g., "Which team won the 2019 World Series?"
-answer | string | e.g., "Washington Nationals"
+| Field Name | Data Type | Note |
+| ---------- | --------- | ---- |
+|  |  | **// event's timestamp** |
+| receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis |
+|  |  | **// event type (QoS, timed metadata feedback, etc.)** |
+| metric_type | string | "QUIZ_ANSWER" in this example |
+|  |  | **// client platform and content** |
+| question | string | e.g., "Which team won the 2019 World Series?" |
+| answer | string | e.g., "Washington Nationals" |
 
 #### 3.2.3 Implementation
 
