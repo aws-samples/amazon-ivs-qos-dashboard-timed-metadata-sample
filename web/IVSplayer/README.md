@@ -118,24 +118,24 @@ The data collected within the QoS events can be leveraged to generate two types 
 
 #### 3.1.2 JSON Schema
 
-Field Name | Data Type | Note
----------- | --------- | ----
-**// event's timestamp** |  |  
-receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis
-**// event type (QoS, timed metadata feedback, etc.)** |  |  
-metric_type | string | "PLAYBACK_SUMMARY" for QoS event
-**// client platform and content** |  |  
-clientPlatform | string | e.g., “web”, “android”, “ios”
-channelWatched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel
-isLive | boolean |  
-**// playback summary** |  |  
-errorCount | integer |  
-playingTimeMs | integer | the duration (in ms) of the player SDK staying in the "PLAYING" state
-bufferingTimeMs | integer | the duration (in ms) of the player SDK staying in the "BUFFERING" state
-renditionName | string | e.g., "Source", "720p60", "720p", "480p", "240p", "160p" (snapshot taken right before the event is sent)
-renditionHeight | integer | (snapshot taken right before the event is sent)
-startupLatencyMs | integer | latency  in ms from load() being called to state becoming PLAYING. Value is only valid in the very first event of playing a channel, and is set to 0 in following events, i.e., the 2nd/3rd/... minute of the playback session
-liveLatencyMs | integer | latency in ms based on "getLiveLatency()" covering the latency from ingest to playback (i.e., not include the latency of broadcast tool), live only. set to -1, if VOD.
+| Field Name | Data Type | Note |
+| ---------- | --------- | ---- |
+|  |  | **// event's timestamp** |
+| receivedTimestampInUTC | string | event's receiving time, stamped by Kinesis |
+|  |  | **// event type (QoS, timed metadata feedback, etc.)** |  
+| metric_type | string | "PLAYBACK_SUMMARY" for QoS event |
+|  |  | **// client platform and content** |  
+| clientPlatform | string | e.g., “web”, “android”, “ios” |
+| channelWatched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
+| isLive | boolean |  |
+|  |  | **// playback summary** |  
+| errorCount | integer |  |
+| playingTimeMs | integer | the duration (in ms) of the player SDK staying in the "PLAYING" state |
+| bufferingTimeMs | integer | the duration (in ms) of the player SDK staying in the "BUFFERING" state |
+| renditionName | string | e.g., "Source", "720p60", "720p", "480p", "240p", "160p" (snapshot taken right before the event is sent) |
+| renditionHeight | integer | (snapshot taken right before the event is sent) |
+| startupLatencyMs | integer | latency  in ms from load() being called to state becoming PLAYING. Value is only valid in the very first event of playing a channel, and is set to 0 in following events, i.e., the 2nd/3rd/... minute of the playback session |
+| liveLatencyMs | integer | latency in ms based on "getLiveLatency()" covering the latency from ingest to playback (i.e., not include the latency of broadcast tool), live only. set to -1, if VOD |
 
 #### 3.1.3 Implementation
 
