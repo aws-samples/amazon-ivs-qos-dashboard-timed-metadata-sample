@@ -46,23 +46,43 @@ http {
 
 ### 2.2 Run the Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
 
-In Chrome, type *http://localhost:8080/* in the web address bar, the sample player will play a test channel with multiple-choice questions:
+In Chrome, type *http://localhost:8080/* in the web address bar, the sample player will play a test channel with multiple-choice questions (see below). If your selected answer is correct, the answer window will turn green, otherwise it will be red.
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_1.png)
 
-...
+When a viewer answers a multiple-choice question, a timed-metadata-feedback event will be assembled and sent to the backend. To see the console output for these events,
+
+- Open the Chrome Developer Tool (in Chrome, select "View", "Developer", "Developer Tool");
+
+- Select "Console";
+
+- Type "sendQuizAnswer" in "Filter";
+
+- See the timed-metadata-feedback events including the question and the selected answer (see below).
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_2.png)
 
-...
+Every minute, the sample player also assembles a playback QoS event and send to the the backend. To see the console output for these events, similar as above and
+
+- Type "sendQoSEvent" in "Filter";
+
+- See the playback QoS events which is a summary of the past minute's playback state (see below).
 
 ![Screenshot of playing the test channel](./README_images/section2dot2_3.png)
+
+### 2.3 Customize Your IVS Video and Dashboard Backend
+
+In *.js/config.js*, replace the default values with the playback URL of your IVS live (or VOD) video and the Gateway API end points of your backend:
+
+- ```"PlaybackURL":```
+
+- ```"SendQoSEventURL":```
+
+- ```"SendQuizAnswerURL":```
 
 ## 3. Deep Dive Into the Design and the Source Code
 
 ### 3.1 Playback QoS Events
-
-...
 
 #### 3.1.1 Submission Frequency and Metrics Covered
 
@@ -82,7 +102,7 @@ In Chrome, type *http://localhost:8080/* in the web address bar, the sample play
 
 ### 3.2 Time-Metadata-Feedback Events
 
-#### 3.2.1 Submission Triggering and Content
+#### 3.2.1 Submission Triggering and Content Included
 
 ...
 
