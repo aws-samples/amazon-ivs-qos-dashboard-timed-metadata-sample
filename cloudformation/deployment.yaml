@@ -299,7 +299,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/6249163013048bded58900616d362120
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/42dd6354380c274060dd4f02a9c24921
       MemorySize: 512
       Environment:
         Variables:
@@ -398,7 +398,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/943a16c5dbfaea9b7ed6900272c06465
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/6b8e58cf32b62059b2e8aa59e6f55f30
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -415,7 +415,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/55f72064f20ef14248136a07ef5d9ad8
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/a7d2b37a3ef0050712fb9f4e3c5cd518
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -431,7 +431,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/04dc1ef5fdc1810b0f8eb4ae81ff5b62
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/581cf1bc2d558d756dbe6b2b1b89c2ef
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -508,7 +508,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/cd3bdcbc914897910593cd9fba35d32d
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/cc2fe339e1c0dd52e58fa9fc793bf443
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -976,6 +976,8 @@ Resources:
         - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: "{'status': '200OK'}"
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
           application/json:
