@@ -155,9 +155,28 @@ Search for *"QoS event"* in *ivs.js* and see the implementation of the following
 
 #### 3.1.4 Test Plan
 
-| Test Case | Test Steps | Expected Results |
-| --------- | ---------- | ---------------- |
-| ... | ... | ... |
+To execute the test plan, you might need to use the Chrome Developer Tool's "Network", "Throttling" (see below).
+
+![Screenshot of Chrome's Developer Tool](./README_images/section3dot1dot4_1.png)
+
+| Test Case | Test Steps | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionName* | *LiveLatencyMs* | *errorCount* |
+| --------- | ---------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
+| 1. Good network contiion | Play the test channel under a reliable network condition having >10mbps bandwidth | 1st | ~2s | ~48s | ~0s | 720p | <3s | ~0 |
+|  |  | Following | 0s | ~50s | ~0s | 720p | <3s | ~0 |
+| 2. Changing network contiion | Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event | 1st | s | s | s | ?p | s | ? |
+|  |  | 2nd | s | s | s | ?p | s | ? |
+|  |  | 3rd | s | s | s | ?p | s | ? |
+|  |  | 4th | s | s | s | ?p | s | ? |
+| 3. Changing network contiion | Start from 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event | 1st | s | s | s | ?p | s | ? |
+|  |  | 2nd | s | s | s | ?p | s | ? |
+|  |  | 3rd | s | s | s | ?p | s | ? |
+|  |  | 4th | s | s | s | ?p | s | ? |
+
+For reference, here are the screenshot of the console output for test case 2 & 3:
+
+![Screenshot of Console Output for Test Case 2](./README_images/section3dot1dot4_2.png)
+
+![Screenshot of Console Output for Test Case 3](./README_images/section3dot1dot4_3.png)
 
 ### 3.2 Timed-Metadata-Feedback Events
 

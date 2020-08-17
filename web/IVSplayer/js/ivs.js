@@ -78,7 +78,7 @@ const cardInnerEl = document.getElementById("card-inner");
     console.log("Player State - PLAYING");
 
     // === Update QoS event work variables ===
-    if (!hasReportedStartupMsOfThisChannel) {
+    if (startupLatencyMsOfThisSession == 0) {
       startupLatencyMsOfThisSession = Date.now() - lastCallingLoadTime;
       console.log("Set startupLatencyMsOfThisSession to", startupLatencyMsOfThisSession);
     } else if (lastRecordedPlayerState == "BUFFERING") {
