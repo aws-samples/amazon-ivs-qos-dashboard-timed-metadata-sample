@@ -159,20 +159,30 @@ To execute the test plan, you might need to use the Chrome Developer Tool's "Net
 
 ![Screenshot of Chrome's Developer Tool](./README_images/section3dot1dot4_1.png)
 
-| Test Case | Test Steps | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionName* | *LiveLatencyMs* | *errorCount* |
-| --------- | ---------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
-| 1. Good network contiion | Play the test channel under a reliable network condition having >10mbps bandwidth | 1st | ~2s | ~48s | ~0s | 720p | <3s | ~0 |
-|  |  | Following | 0s | ~50s | ~0s | 720p | <3s | ~0 |
-| 2. Changing network contiion | Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event | 1st | s | s | s | ?p | s | ? |
-|  |  | 2nd | s | s | s | ?p | s | ? |
-|  |  | 3rd | s | s | s | ?p | s | ? |
-|  |  | 4th | s | s | s | ?p | s | ? |
-| 3. Changing network contiion | Start from 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event | 1st | s | s | s | ?p | s | ? |
-|  |  | 2nd | s | s | s | ?p | s | ? |
-|  |  | 3rd | s | s | s | ?p | s | ? |
-|  |  | 4th | s | s | s | ?p | s | ? |
+Test plan:
 
-For reference, here are the screenshot of the console output for test case 2 & 3:
+- 1. Good network condition - Play the test channel under a reliable network condition having >10mbps bandwidth;
+
+- 2. Changing network contiion - Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event;
+
+- 3. Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event.
+
+Reference test result:
+
+| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
+| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
+| 1 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
+|   | Following | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+| 2 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
+|   | 2nd       | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+|   | 3rd       | 0s  | >55s | <5s | 360 | <6s | ~0 |
+|   | 4th       | 0s  | ~60s | ~0s | 360 | <6s | ~0 |
+| 3 | 1st       | ~5s | ~55s | ~0s | 360 | <5s | ~0 |
+|   | 2nd       | 0s  | ~60s | ~0s | 360 | <5s | ~0 |
+|   | 3rd       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
+|   | 4th       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
+
+Below are the screenshots of the console output for test case 2 & 3, also see section 2.2 for the console output for test case 1.
 
 ![Screenshot of Console Output for Test Case 2](./README_images/section3dot1dot4_2.png)
 
