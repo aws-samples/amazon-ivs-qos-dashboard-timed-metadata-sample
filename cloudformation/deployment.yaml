@@ -1,94 +1,133 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: QoS - Player with event capture, ingest and processing implementation
-
 Mappings:
-    SourceCodeBucket:
-      General:
-        S3Bucket: 'ganeshji-sfqos'
-        LambdaUIDeploymentCodePrefix: 'qos/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/lambda-functions/add-partition-function'
-        UICodePrefix: 'user-interfaces'
-        Version: 'ivsqosv1'
-
+  SourceCodeBucket:
+    General:
+      S3Bucket: ganeshji-sfqos
+      LambdaUIDeploymentCodePrefix: qos/ivsqosv4/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/ivsqosv4/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/ivsqosv4/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/ivsqosv4/lambda-functions/add-partition-function
+      UICodePrefix: user-interfaces
 Parameters:
   LiveURL:
     Type: String
-
   DeployDemoUI:
     Type: String
     Description: Deploy the demo user interface for testing
     Default: true
     AllowedValues:
-      - true
-      - false
-
+    - true
+    - false
+  PushToElasticSearch:
+    Type: String
+    Description: Enabling this along with specifying the ES Domain will push logs
+      to ES
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  ElasticSearchDomainArn:
+    Type: String
+    Description: ElasticSearch Domain Arn
+  ElasticSearchIndexName:
+    Type: String
+    Description: ElasticSearch Index Name
+    Default: player_summary
+  ElasticSearchIndexRotation:
+    Type: String
+    Description: Index Rotation Interval
+    Default: None
+    AllowedValues:
+    - None
+    - Hour
+    - Day
+    - Week
+    - Month
 Conditions:
-  DeployDemoUICondition: !Equals [!Ref DeployDemoUI, true]
-  USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
-
+  DeployDemoUICondition:
+    Fn::Equals:
+    - Ref: DeployDemoUI
+    - true
+  USStandardRegion:
+    Fn::Equals:
+    - Ref: AWS::Region
+    - us-east-1
+  PushToElasticSearchCondition:
+    Fn::Equals:
+    - Ref: PushToElasticSearch
+    - true
+  NoElasticSearchCondition:
+    Fn::Equals:
+    - Ref: PushToElasticSearch
+    - false
 Resources:
   SourceBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Condition: DeployDemoUICondition
     Properties:
       VersioningConfiguration:
         Status: Enabled
       CorsConfiguration:
         CorsRules:
-          -
-            AllowedHeaders:
-              - '*'
-            AllowedMethods:
-              - 'GET'
-              - 'PUT'
-              - 'POST'
-              - 'DELETE'
-            AllowedOrigins:
-              - '*'
-            MaxAge: 3000
-            ExposedHeaders:
-              - 'ETAG'
-              - 'x-amz-cf-id'
-
+        - AllowedHeaders:
+          - '*'
+          AllowedMethods:
+          - GET
+          - PUT
+          - POST
+          - DELETE
+          AllowedOrigins:
+          - '*'
+          MaxAge: 3000
+          ExposedHeaders:
+          - ETAG
+          - x-amz-cf-id
   SourceBucketPolicy:
-    Type: 'AWS::S3::BucketPolicy'
+    Type: AWS::S3::BucketPolicy
     Condition: DeployDemoUICondition
     Properties:
       PolicyDocument:
         Statement:
-          - Action:
-              - 's3:GetObject'
-            Resource: !Sub 'arn:aws:s3:::${SourceBucket}/*'
-            Effect: Allow
-            Principal:
-              AWS:
-              - !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CFOriginAccessIdentity}'
-      Bucket: !Ref SourceBucket
-
+        - Action:
+          - s3:GetObject
+          Resource:
+            Fn::Sub: arn:aws:s3:::${SourceBucket}/*
+          Effect: Allow
+          Principal:
+            AWS:
+            - Fn::Sub: arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                ${CFOriginAccessIdentity}
+      Bucket:
+        Ref: SourceBucket
   CFOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Condition: DeployDemoUICondition
     Properties:
       CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub "${AWS::StackName} - QoS - OAI for player"
-
+        Comment:
+          Fn::Sub: ${AWS::StackName} - QoS - OAI for player
   CFDistribution:
-    Type: 'AWS::CloudFront::Distribution'
+    Type: AWS::CloudFront::Distribution
     Condition: DeployDemoUICondition
     DependsOn:
-      - SourceBucket
+    - SourceBucket
     Properties:
       DistributionConfig:
         Origins:
-        - DomainName: !If [USStandardRegion, !Sub '${SourceBucket}.s3.amazonaws.com', !Sub '${SourceBucket}.s3-${AWS::Region}.amazonaws.com']
+        - DomainName:
+            Fn::If:
+            - USStandardRegion
+            - Fn::Sub: ${SourceBucket}.s3.amazonaws.com
+            - Fn::Sub: ${SourceBucket}.s3-${AWS::Region}.amazonaws.com
           Id: myS3Origin
           S3OriginConfig:
-            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CFOriginAccessIdentity}
-        Enabled: True
-        Comment: !Sub "${AWS::StackName} - distribution for vod website"
+            OriginAccessIdentity:
+              Fn::Sub: origin-access-identity/cloudfront/${CFOriginAccessIdentity}
+        Enabled: true
+        Comment:
+          Fn::Sub: ${AWS::StackName} - distribution for vod website
         DefaultRootObject: index.html
         DefaultCacheBehavior:
           TargetOriginId: myS3Origin
@@ -96,67 +135,66 @@ Resources:
           MinTTL: 300
           MaxTTL: 86400
           DefaultTTL: 86400
-          SmoothStreaming: False
-          Compress: True
+          SmoothStreaming: false
+          Compress: true
           ForwardedValues:
-            QueryString: False
+            QueryString: false
             Cookies:
-              Forward: 'none'
+              Forward: none
             Headers:
-              - 'Access-Control-Request-Headers'
-              - 'Access-Control-Request-Method'
-              - 'Origin'
+            - Access-Control-Request-Headers
+            - Access-Control-Request-Method
+            - Origin
         PriceClass: PriceClass_All
         ViewerCertificate:
-          CloudFrontDefaultCertificate: True
+          CloudFrontDefaultCertificate: true
         Logging:
-          Bucket: !GetAtt PlayerLogsBucket.DomainName
-          Prefix: 'access_logs/cloudfront/'
-
+          Bucket:
+            Fn::GetAtt:
+            - PlayerLogsBucket
+            - DomainName
+          Prefix: access_logs/cloudfront/
   GlueRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          -
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "glue.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
+        - Effect: Allow
+          Principal:
+            Service:
+            - glue.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
       Policies:
-        -
-          PolicyName: "root"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: "Allow"
-                Action: "*"
-                Resource: "*"
-
-# Create an AWS Glue database
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: '*'
+            Resource: '*'
   GlueDatabase:
     Type: AWS::Glue::Database
     Properties:
-      CatalogId: !Ref AWS::AccountId
+      CatalogId:
+        Ref: AWS::AccountId
       DatabaseInput:
-        Name: !Sub '${AWS::StackName}_qos_db'
-
+        Name:
+          Fn::Sub: ${AWS::StackName}_qos_db
   PlayerLogsTable:
     Type: AWS::Glue::Table
     Properties:
-      CatalogId: !Ref AWS::AccountId
-      DatabaseName: !Ref GlueDatabase
+      CatalogId:
+        Ref: AWS::AccountId
+      DatabaseName:
+        Ref: GlueDatabase
       TableInput:
-        Name: 'player_logs'
+        Name: player_logs
         TableType: EXTERNAL_TABLE
-        Parameters: {
-          "classification": "json"
-        }
+        Parameters:
+          classification: json
         PartitionKeys:
         - Name: year
           Type: string
@@ -200,443 +238,692 @@ Resources:
           - Name: answer
             Type: string
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
-          Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/player_logs/']]
+          Location:
+            Fn::Join:
+            - ''
+            - - s3://
+              - Ref: PlayerLogsBucket
+              - /player_logs/
           SerdeInfo:
             SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
-
   DeployFunctionRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Condition: DeployDemoUICondition
     Properties:
       Path: /service-role/
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        - 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
       Policies:
-        - PolicyName: CustomPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Action:
-                  - 's3:*'
-                Resource: !Sub 'arn:aws:s3:::${SourceBucket}/*'
-                Effect: Allow
-              - Action:
-                  - 's3:*'
-                Resource: !Join ["/",
-                [
-                !Join [":",['arn','aws','s3','','',
-                !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"],!Ref "AWS::Region"]]
-                ]],
-                '*']]
-                Effect: Allow
+      - PolicyName: CustomPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - s3:*
+            Resource:
+              Fn::Sub: arn:aws:s3:::${SourceBucket}/*
+            Effect: Allow
+          - Action:
+            - s3:*
+            Resource:
+              Fn::Join:
+              - /
+              - - Fn::Join:
+                  - ':'
+                  - - arn
+                    - aws
+                    - s3
+                    - ''
+                    - ''
+                    - Fn::Join:
+                      - '-'
+                      - - Fn::FindInMap:
+                          - SourceCodeBucket
+                          - General
+                          - S3Bucket
+                        - Ref: AWS::Region
+                - '*'
+            Effect: Allow
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
           Action:
-            - 'sts:AssumeRole'
+          - sts:AssumeRole
           Effect: Allow
           Principal:
             Service:
-              - lambda.amazonaws.com
-              - s3.amazonaws.com
-
+            - lambda.amazonaws.com
+            - s3.amazonaws.com
   DeployFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "deploy-function.zip"]]
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/6249163013048bded58900616d362120
       MemorySize: 512
       Environment:
         Variables:
-          SourceBucket: !Ref SourceBucket
-          SourceFileBucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-          SourceUIFilePath: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "UICodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "player-ui.zip"]]
-          UIPrefix: 'ui'
-          PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          LIVE_URL: !Ref LiveURL
+          SourceBucket:
+            Ref: SourceBucket
+          SourceFileBucket:
+            Fn::Join:
+            - '-'
+            - - Fn::FindInMap:
+                - SourceCodeBucket
+                - General
+                - S3Bucket
+              - Ref: AWS::Region
+          SourceUIFilePath:
+            Fn::Join:
+            - /
+            - - Fn::FindInMap:
+                - SourceCodeBucket
+                - General
+                - LambdaUIDeploymentCodePrefix
+              - Fn::FindInMap:
+                - SourceCodeBucket
+                - General
+                - UICodePrefix
+              - player-ui.zip
+          UIPrefix: ui
+          PlayerSummaryEndpoint:
+            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+          AnswerSummaryEndpoint:
+            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+          LIVE_URL:
+            Ref: LiveURL
       Handler: index.handler
-      Role: !GetAtt DeployFunctionRole.Arn
+      Role:
+        Fn::GetAtt:
+        - DeployFunctionRole
+        - Arn
       Timeout: 300
       Runtime: nodejs12.x
-
   DeployArtifacts:
-    Type: 'Custom::DeployUI'
+    Type: Custom::DeployUI
     Condition: DeployDemoUICondition
     DependsOn:
-      - CFDistribution
+    - CFDistribution
     Properties:
-      DeliveryStreamName: !Ref PlayerLogsDeliveryStream
-      PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-      AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-      Region: !Sub ${AWS::Region}
-      CloudFrontDomain: !Sub https://${CFDistribution.DomainName}/
-      # CloudFrontDomain: 'test'
-      ServiceToken: !GetAtt DeployFunction.Arn
-
+      DeliveryStreamName:
+        Fn::If:
+        - PushToElasticSearchCondition
+        - Ref: PlayerLogsESDeliveryStream
+        - Ref: PlayerLogsDeliveryStream
+      PlayerSummaryEndpoint:
+        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+      AnswerSummaryEndpoint:
+        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+      Region:
+        Fn::Sub: ${AWS::Region}
+      CloudFrontDomain:
+        Fn::Sub: https://${CFDistribution.DomainName}/
+      ServiceToken:
+        Fn::GetAtt:
+        - DeployFunction
+        - Arn
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-qos-lambda
+      RoleName:
+        Fn::Sub: ${AWS::StackName}-qos-lambda
       Path: /
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
       Policies:
-        - PolicyName: 'QoS-Lambda-exec-policy'
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: lambda:InvokeFunction
-                Resource: arn:aws:lambda:*:*:function:*
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*:*
-              - Effect: Allow
-                Action:
-                  - cloudwatch:PutInsightRule
-                  - cloudwatch:PutMetricAlarm
-                  - cloudwatch:PutMetricData
-                Resource: "*"
-
+      - PolicyName: QoS-Lambda-exec-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: lambda:InvokeFunction
+            Resource: arn:aws:lambda:*:*:function:*
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*:*
+          - Effect: Allow
+            Action:
+            - cloudwatch:PutInsightRule
+            - cloudwatch:PutMetricAlarm
+            - cloudwatch:PutMetricData
+            Resource: '*'
+  RecordValidationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/943a16c5dbfaea9b7ed6900272c06465
+      MemorySize: 512
+      Handler: function.handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Timeout: 300
+      Runtime: python3.8
+      Environment:
+        Variables:
+          BUCKET_VALIDATION_DEFS:
+            Ref: PlayerLogsBucket
+          BUCKET_VALIDATION_FILE: /record/validations.json
   PlayerSummaryCWFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "PlayerSummaryCWCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "playersummary-cw-function.zip"]]
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/55f72064f20ef14248136a07ef5d9ad8
       MemorySize: 512
       Handler: index.handler
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
       Timeout: 300
       Runtime: nodejs12.x
       Environment:
         Variables:
-          DASHBOARD_NAME: !Sub ${AWS::StackName}-QoS
-
+          DASHBOARD_NAME:
+            Fn::Sub: ${AWS::StackName}-QoS
   QuizSummaryCWFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "QuizSummaryCWCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "quizsummary-cw-function.zip"]]
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/04dc1ef5fdc1810b0f8eb4ae81ff5b62
       MemorySize: 512
       Handler: index.handler
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
       Timeout: 300
       Runtime: nodejs12.x
       Environment:
         Variables:
-          DASHBOARD_NAME: !Sub ${AWS::StackName}-QoS
-
+          DASHBOARD_NAME:
+            Fn::Sub: ${AWS::StackName}-QoS
   AddPartitionFunctionRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       Path: /service-role/
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: CustomPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Action: athena:*
-                Effect: Allow
-                Resource: "*"
-              - Action:
-                  - glue:CreateDatabase
-                  - glue:DeleteDatabase
-                  - glue:GetDatabase
-                  - glue:GetDatabases
-                  - glue:UpdateDatabase
-                  - glue:CreateTable
-                  - glue:DeleteTable
-                  - glue:BatchDeleteTable
-                  - glue:UpdateTable
-                  - glue:GetTable
-                  - glue:GetTables
-                  - glue:BatchCreatePartition
-                  - glue:CreatePartition
-                  - glue:DeletePartition
-                  - glue:BatchDeletePartition
-                  - glue:UpdatePartition
-                  - glue:GetPartition
-                  - glue:GetPartitions
-                  - glue:BatchGetPartition
-                Effect: Allow
-                Resource: "*"
-              - Action:
-                  - s3:GetBucketLocation
-                  - s3:GetObject
-                  - s3:ListBucket
-                  - s3:ListBucketMultipartUploads
-                  - s3:ListMultipartUploadParts
-                  - s3:AbortMultipartUpload
-                  - s3:CreateBucket
-                  - s3:PutObject
-                Effect: Allow
-                Resource:
-                  - arn:aws:s3:::aws-athena-query-results-*
-                  - !Sub arn:aws:s3:::${PlayerLogsBucket}*
+      - PolicyName: CustomPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action: athena:*
+            Effect: Allow
+            Resource: '*'
+          - Action:
+            - glue:CreateDatabase
+            - glue:DeleteDatabase
+            - glue:GetDatabase
+            - glue:GetDatabases
+            - glue:UpdateDatabase
+            - glue:CreateTable
+            - glue:DeleteTable
+            - glue:BatchDeleteTable
+            - glue:UpdateTable
+            - glue:GetTable
+            - glue:GetTables
+            - glue:BatchCreatePartition
+            - glue:CreatePartition
+            - glue:DeletePartition
+            - glue:BatchDeletePartition
+            - glue:UpdatePartition
+            - glue:GetPartition
+            - glue:GetPartitions
+            - glue:BatchGetPartition
+            Effect: Allow
+            Resource: '*'
+          - Action:
+            - s3:GetBucketLocation
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:ListBucketMultipartUploads
+            - s3:ListMultipartUploadParts
+            - s3:AbortMultipartUpload
+            - s3:CreateBucket
+            - s3:PutObject
+            Effect: Allow
+            Resource:
+            - arn:aws:s3:::aws-athena-query-results-*
+            - Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}*
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Action:
-              - 'sts:AssumeRole'
-            Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-                - s3.amazonaws.com
-                - glue.amazonaws.com
-                - athena.amazonaws.com
-
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+            - s3.amazonaws.com
+            - glue.amazonaws.com
+            - athena.amazonaws.com
   AddPartitionFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-        S3Key: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "AddPartitionFunctionCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "add-partition-function.zip"]]
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/cd3bdcbc914897910593cd9fba35d32d
       MemorySize: 512
       Handler: index.handler
-      Role: !GetAtt AddPartitionFunctionRole.Arn
+      Role:
+        Fn::GetAtt:
+        - AddPartitionFunctionRole
+        - Arn
       Timeout: 900
       Runtime: nodejs12.x
       Environment:
         Variables:
-          ATHENA_RESULT_BUCKET: !Ref PlayerLogsBucket
-          PLAYER_LOGS_BUCKET: !Ref PlayerLogsBucket
-          PLAYER_LOGS_TABLE: !Join ['.', [!Ref GlueDatabase, !Ref PlayerLogsTable]]
-          # ETL_PLAYER_LOGS_TABLE: !Join ['.', [!Ref GlueDatabase, !Ref WatchTimeLogsTable]]
-
+          ATHENA_RESULT_BUCKET:
+            Ref: PlayerLogsBucket
+          PLAYER_LOGS_BUCKET:
+            Ref: PlayerLogsBucket
+          PLAYER_LOGS_TABLE:
+            Fn::Join:
+            - .
+            - - Ref: GlueDatabase
+              - Ref: PlayerLogsTable
   AddPartitionScheduledRule:
     Type: AWS::Events::Rule
     Properties:
-      Description: "ScheduledRule"
-      ScheduleExpression: "rate(5 minutes)"
-      State: "ENABLED"
+      Description: ScheduledRule
+      ScheduleExpression: rate(5 minutes)
+      State: ENABLED
       Targets:
-        -
-          Arn: !GetAtt AddPartitionFunction.Arn
-          Id: "AddPartitionFunction"
-
+      - Arn:
+          Fn::GetAtt:
+          - AddPartitionFunction
+          - Arn
+        Id: AddPartitionFunction
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref AddPartitionFunction
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: !GetAtt AddPartitionScheduledRule.Arn
-
+      FunctionName:
+        Ref: AddPartitionFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - AddPartitionScheduledRule
+        - Arn
   PlayerLogsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-logs-${AWS::AccountId}-${AWS::Region}
+      BucketName:
+        Fn::Sub: ${AWS::StackName}-logs-${AWS::AccountId}-${AWS::Region}
       VersioningConfiguration:
         Status: Enabled
-
+  KinesisFirehoseLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /ivsqos/${AWS::StackName}
+      RetentionInDays: 30
+  KinesisFirehoseLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName:
+        Ref: KinesisFirehoseLogGroup
+      LogStreamName: playerlogstream
+  KinesisFirehoseESLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName:
+        Ref: KinesisFirehoseLogGroup
+      LogStreamName: elasticsearchDelivery
   DeliveryRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: ''
-            Effect: Allow
-            Principal:
-              Service: firehose.amazonaws.com
-            Action: 'sts:AssumeRole'
-            Condition:
-              StringEquals:
-                'sts:ExternalId': !Ref 'AWS::AccountId'
-
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service:
+            - firehose.amazonaws.com
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+          Condition:
+            StringEquals:
+              sts:ExternalId:
+                Ref: AWS::AccountId
   DeliveryPolicy:
     Type: AWS::IAM::Policy
+    Condition: NoElasticSearchCondition
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Effect: Allow
-            Action:
-              - 's3:AbortMultipartUpload'
-              - 's3:GetBucketLocation'
-              - 's3:GetObject'
-              - 's3:ListBucket'
-              - 's3:ListBucketMultipartUploads'
-              - 's3:PutObject'
-            Resource:
-                - !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
-                - !Sub 'arn:aws:s3:::${PlayerLogsBucket}/*'
+        - Effect: Allow
+          Action:
+          - s3:AbortMultipartUpload
+          - s3:GetBucketLocation
+          - s3:GetObject
+          - s3:ListBucket
+          - s3:ListBucketMultipartUploads
+          - s3:PutObject
+          Resource:
+          - Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}
+          - Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}/*
+        - Effect: Allow
+          Action:
+          - logs:PutLogEvents
+          Resource:
+          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}
       Roles:
-        - !Ref DeliveryRole
-
+      - Ref: DeliveryRole
   PlayerLogsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: NoElasticSearchCondition
     DependsOn:
-      - PlayerLogsBucket
+    - PlayerLogsBucket
+    - DeliveryPolicy
     Properties:
       DeliveryStreamType: DirectPut
-      DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-stream'
+      DeliveryStreamName:
+        Fn::Sub: ${AWS::StackName}-playerlogs-stream
       S3DestinationConfiguration:
-        BucketARN: !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
+        BucketARN:
+          Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}
         BufferingHints:
           IntervalInSeconds: 60
           SizeInMBs: 1
         CompressionFormat: UNCOMPRESSED
         Prefix: player_logs/
-        RoleARN: !GetAtt DeliveryRole.Arn
+        RoleARN:
+          Fn::GetAtt:
+          - DeliveryRole
+          - Arn
         CloudWatchLoggingOptions:
           Enabled: true
-          LogGroupName: "deliverystream"
-          LogStreamName: "playerlogstream"
-
+          LogGroupName:
+            Ref: KinesisFirehoseLogGroup
+          LogStreamName:
+            Ref: KinesisFirehoseLogStream
+  ESDeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Condition: PushToElasticSearchCondition
+    Properties:
+      PolicyName: firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:AbortMultipartUpload
+          - s3:GetBucketLocation
+          - s3:GetObject
+          - s3:ListBucket
+          - s3:ListBucketMultipartUploads
+          - s3:PutObject
+          Resource:
+          - Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}
+          - Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}/*
+        - Effect: Allow
+          Action:
+          - es:DescribeElasticsearchDomain
+          - es:DescribeElasticsearchDomains
+          - es:DescribeElasticsearchDomainConfig
+          - es:ESHttpPost
+          - es:ESHttpPut
+          Resource:
+          - Ref: ElasticSearchDomainArn
+          - Fn::Sub: ${ElasticSearchDomainArn}/*
+          - '*'
+        - Effect: Allow
+          Action:
+          - es:ESHttpGet
+          Resource:
+          - Fn::Sub: ${ElasticSearchDomainArn}/_all/_settings
+          - Fn::Sub: ${ElasticSearchDomainArn}/_cluster/stats
+          - Fn::Sub: ${ElasticSearchDomainArn}/index-name*/_mapping/type-name
+          - Fn::Sub: ${ElasticSearchDomainArn}/_nodes
+          - Fn::Sub: ${ElasticSearchDomainArn}/_nodes/stats
+          - Fn::Sub: ${ElasticSearchDomainArn}/_nodes/*/stats
+          - Fn::Sub: ${ElasticSearchDomainArn}/_stats
+          - Fn::Sub: ${ElasticSearchDomainArn}/index-name*/_stats
+          - '*'
+        - Effect: Allow
+          Action:
+          - logs:PutLogEvents
+          Resource:
+          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}
+          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}
+        - Effect: Allow
+          Action:
+          - lambda:InvokeFunction
+          - lambda:GetFunctionConfiguration
+          Resource:
+          - Fn::Sub: ${RecordValidationFunction.Arn}:$LATEST
+      Roles:
+      - Ref: DeliveryRole
+  PlayerLogsESDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: PushToElasticSearchCondition
+    DependsOn:
+    - PlayerLogsBucket
+    - ESDeliveryPolicy
+    Properties:
+      DeliveryStreamType: DirectPut
+      DeliveryStreamName:
+        Fn::Sub: ${AWS::StackName}-playerlogs-es-stream
+      ElasticsearchDestinationConfiguration:
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 5
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName:
+            Ref: KinesisFirehoseLogGroup
+          LogStreamName:
+            Ref: KinesisFirehoseESLogStream
+        DomainARN:
+          Ref: ElasticSearchDomainArn
+        IndexName:
+          Ref: ElasticSearchIndexName
+        IndexRotationPeriod: NoRotation
+        ProcessingConfiguration:
+          Enabled: true
+          Processors:
+          - Type: Lambda
+            Parameters:
+            - ParameterName: BufferSizeInMBs
+              ParameterValue: 3
+            - ParameterName: LambdaArn
+              ParameterValue:
+                Fn::GetAtt:
+                - RecordValidationFunction
+                - Arn
+            - ParameterName: NumberOfRetries
+              ParameterValue: 1
+            - ParameterName: BufferIntervalInSeconds
+              ParameterValue: 60
+            - ParameterName: RoleArn
+              ParameterValue:
+                Fn::GetAtt:
+                - DeliveryRole
+                - Arn
+        RetryOptions:
+          DurationInSeconds: 60
+        RoleARN:
+          Fn::GetAtt:
+          - DeliveryRole
+          - Arn
+        S3BackupMode: AllDocuments
+        S3Configuration:
+          BucketARN:
+            Fn::Sub: arn:aws:s3:::${PlayerLogsBucket}
+          BufferingHints:
+            IntervalInSeconds: 60
+            SizeInMBs: 50
+          CompressionFormat: UNCOMPRESSED
+          Prefix: player_logs/
+          RoleARN:
+            Fn::GetAtt:
+            - DeliveryRole
+            - Arn
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName:
+              Ref: KinesisFirehoseLogGroup
+            LogStreamName:
+              Ref: KinesisFirehoseLogStream
   KinesisAnalyticsRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service: kinesisanalytics.amazonaws.com
-            Action: "sts:AssumeRole"
-      Path: "/"
+        - Effect: Allow
+          Principal:
+            Service: kinesisanalytics.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
       Policies:
-        - PolicyName: Open
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: "*"
-                Resource: "*"
-
+      - PolicyName: Open
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: '*'
+            Resource: '*'
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
     Properties:
-      ApplicationName: !Sub '${AWS::StackName}-qos-realtimeapp1'
-      ApplicationDescription: "QoS Realtime Application"
-      ApplicationCode: "CREATE OR REPLACE STREAM PLAYER_STATS (METRIC_TYPE VARCHAR(20), METRIC_UNIT VARCHAR(15), CLIENT_PLATFORM VARCHAR(10), SUMMARY DOUBLE);\n
- CREATE OR REPLACE PUMP \"STREAM_PUMP4\" AS INSERT INTO \"PLAYER_STATS\" \n
- -- errors \n
- SELECT STREAM 'ERRORS', 'Count', \"client_platform\", SUM(\"error_count\") \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
- UNION ALL \n
- -- concurrent users \n
- SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", count(*) \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
- UNION ALL \n
- -- average start up time in seconds \n
- SELECT STREAM 'STARTUP_TIME', 'Seconds', \"client_platform\", AVG(\"startup_latency_ms\")/1000 \n
- FROM     \"SOURCE_SQL_STREAM_001\"  where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
-  UNION ALL \n
--- buffer ratio \n
-SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_time_ms\"/\"playing_time_ms\")*100 \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
-   UNION ALL \n
--- live latency \n
-SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\")/1000 \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n"
+      ApplicationName:
+        Fn::Sub: ${AWS::StackName}-qos-realtimeapp1
+      ApplicationDescription: QoS Realtime Application
+      ApplicationCode: "CREATE OR REPLACE STREAM PLAYER_STATS (METRIC_TYPE VARCHAR(20),\
+        \ METRIC_UNIT VARCHAR(15), CLIENT_PLATFORM VARCHAR(10), SUMMARY DOUBLE);\n\
+        \ CREATE OR REPLACE PUMP \"STREAM_PUMP4\" AS INSERT INTO \"PLAYER_STATS\"\
+        \ \n -- errors \n SELECT STREAM 'ERRORS', 'Count', \"client_platform\", SUM(\"\
+        error_count\") \n FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"\
+        ='PLAYBACK_SUMMARY' \n GROUP BY \"client_platform\", \n STEP(\"SOURCE_SQL_STREAM_001\"\
+        .ROWTIME BY INTERVAL '60' SECOND) \n UNION ALL \n -- concurrent users \n SELECT\
+        \ STREAM 'CONCURRENCY', 'Count', \"client_platform\", count(*) \n FROM   \
+        \  \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n GROUP\
+        \ BY \"client_platform\", \n STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL\
+        \ '60' SECOND) \n UNION ALL \n -- average start up time in seconds \n SELECT\
+        \ STREAM 'STARTUP_TIME', 'Seconds', \"client_platform\", AVG(\"startup_latency_ms\"\
+        )/1000 \n FROM     \"SOURCE_SQL_STREAM_001\"  where \"metric_type\"='PLAYBACK_SUMMARY'\
+        \ \n GROUP BY \"client_platform\", \n STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME\
+        \ BY INTERVAL '60' SECOND) \n UNION ALL \n -- buffer ratio \n SELECT STREAM\
+        \ 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_time_ms\"\
+        /\"playing_time_ms\")*100 \n FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"\
+        ='PLAYBACK_SUMMARY' \n GROUP BY \"client_platform\", \n STEP(\"SOURCE_SQL_STREAM_001\"\
+        .ROWTIME BY INTERVAL '60' SECOND) \n UNION ALL \n -- live latency \n SELECT\
+        \ STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\"\
+        )/1000 \n FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY'\
+        \ \n GROUP BY \"client_platform\", \n STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME\
+        \ BY INTERVAL '60' SECOND);\n"
       Inputs:
-        - NamePrefix: "SOURCE_SQL_STREAM"
-          InputSchema:
-            RecordColumns:
-             - Name: "metric_type"
-               SqlType: "VARCHAR(16)"
-               Mapping: "$.metric_type"
-             - Name: "client_platform"
-               SqlType: "VARCHAR(10)"
-               Mapping: "$.client_platform"
-             - Name: "channel_watched"
-               SqlType: "VARCHAR(20)"
-               Mapping: "$.channel_watched"
-             - Name: "user_id"
-               SqlType: "VARCHAR(64)"
-               Mapping: "$.user_id"
-             - Name: "is_live"
-               SqlType: "BOOLEAN"
-               Mapping: "$.is_live"
-             - Name: "error_count"
-               SqlType: "INTEGER"
-               Mapping: "$.error_count"
-             - Name: "playing_time_ms"
-               SqlType: "BIGINT"
-               Mapping: "$.playing_time_ms"
-             - Name: "buffering_time_ms"
-               SqlType: "BIGINT"
-               Mapping: "$.buffering_time_ms"
-             - Name: "rendition_name"
-               SqlType: "VARCHAR(20)"
-               Mapping: "$.rendition_name"
-             - Name: "rendition_height"
-               SqlType: "INTEGER"
-               Mapping: "$.rendition_height"
-             - Name: "startup_latency_ms"
-               SqlType: "BIGINT"
-               Mapping: "$.startup_latency_ms"
-             - Name: "live_latency_ms"
-               SqlType: "BIGINT"
-               Mapping: "$.live_latency_ms"
-             - Name: "question"
-               SqlType: "VARCHAR(50)"
-               Mapping: "$.question"
-             - Name: "answer"
-               SqlType: "VARCHAR(20)"
-               Mapping: "$.answer"
-            RecordFormat:
-              RecordFormatType: "JSON"
-              MappingParameters:
-                JSONMappingParameters:
-                  RecordRowPath: "$"
-          KinesisFirehoseInput:
-            ResourceARN: !GetAtt PlayerLogsDeliveryStream.Arn
-            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
-
+      - NamePrefix: SOURCE_SQL_STREAM
+        InputSchema:
+          RecordColumns:
+          - Name: metric_type
+            SqlType: VARCHAR(16)
+            Mapping: $.metric_type
+          - Name: client_platform
+            SqlType: VARCHAR(10)
+            Mapping: $.client_platform
+          - Name: channel_watched
+            SqlType: VARCHAR(20)
+            Mapping: $.channel_watched
+          - Name: user_id
+            SqlType: VARCHAR(64)
+            Mapping: $.user_id
+          - Name: is_live
+            SqlType: BOOLEAN
+            Mapping: $.is_live
+          - Name: error_count
+            SqlType: INTEGER
+            Mapping: $.error_count
+          - Name: playing_time_ms
+            SqlType: BIGINT
+            Mapping: $.playing_time_ms
+          - Name: buffering_time_ms
+            SqlType: BIGINT
+            Mapping: $.buffering_time_ms
+          - Name: rendition_name
+            SqlType: VARCHAR(20)
+            Mapping: $.rendition_name
+          - Name: rendition_height
+            SqlType: INTEGER
+            Mapping: $.rendition_height
+          - Name: startup_latency_ms
+            SqlType: BIGINT
+            Mapping: $.startup_latency_ms
+          - Name: live_latency_ms
+            SqlType: BIGINT
+            Mapping: $.live_latency_ms
+          - Name: question
+            SqlType: VARCHAR(50)
+            Mapping: $.question
+          - Name: answer
+            SqlType: VARCHAR(20)
+            Mapping: $.answer
+          RecordFormat:
+            RecordFormatType: JSON
+            MappingParameters:
+              JSONMappingParameters:
+                RecordRowPath: $
+        KinesisFirehoseInput:
+          ResourceARN:
+            Fn::If:
+            - PushToElasticSearchCondition
+            - Fn::GetAtt:
+              - PlayerLogsESDeliveryStream
+              - Arn
+            - Fn::GetAtt:
+              - PlayerLogsDeliveryStream
+              - Arn
+          RoleARN:
+            Fn::GetAtt:
+            - KinesisAnalyticsRole
+            - Arn
   PlayerSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
     Properties:
-      ApplicationName: !Ref RealtimeAnalytics
+      ApplicationName:
+        Ref: RealtimeAnalytics
       Output:
-          Name: "PLAYER_STATS"
-          DestinationSchema:
-            RecordFormatType: "JSON"
-          LambdaOutput:
-            ResourceARN: !GetAtt PlayerSummaryCWFunction.Arn
-            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
-
+        Name: PLAYER_STATS
+        DestinationSchema:
+          RecordFormatType: JSON
+        LambdaOutput:
+          ResourceARN:
+            Fn::GetAtt:
+            - PlayerSummaryCWFunction
+            - Arn
+          RoleARN:
+            Fn::GetAtt:
+            - KinesisAnalyticsRole
+            - Arn
   QuizSummaryApplication:
     Type: AWS::KinesisAnalytics::ApplicationOutput
     Properties:
-      ApplicationName: !Ref RealtimeAnalytics
+      ApplicationName:
+        Ref: RealtimeAnalytics
       Output:
-          Name: "QUIZ_STATS"
-          DestinationSchema:
-            RecordFormatType: "JSON"
-          LambdaOutput:
-            ResourceARN: !GetAtt QuizSummaryCWFunction.Arn
-            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
-
+        Name: QUIZ_STATS
+        DestinationSchema:
+          RecordFormatType: JSON
+        LambdaOutput:
+          ResourceARN:
+            Fn::GetAtt:
+            - QuizSummaryCWFunction
+            - Arn
+          RoleARN:
+            Fn::GetAtt:
+            - KinesisAnalyticsRole
+            - Arn
   GlueJobRole:
     Type: AWS::IAM::Role
     Properties:
@@ -644,152 +931,94 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         Version: 2012-10-17
         Statement:
           Action:
-            - 'sts:AssumeRole'
+          - sts:AssumeRole
           Effect: Allow
           Principal:
             Service:
-              - glue.amazonaws.com
+            - glue.amazonaws.com
       ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
-        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-
-  # WatchTimeGlueJob:
-  #     Type: AWS::Glue::Job
-  #     Condition: DeployDemoUICondition
-  #     DependsOn: DeployFunction
-  #     Properties:
-  #       Command:
-  #         Name: glueetl
-  #         ScriptLocation: !Join ["", ["s3://",!Ref SourceBucket,"/qos/etl/",!FindInMap [SourceCodeBucket, General, Version],"/player_log_job"]]
-  #       DefaultArguments:
-  #         "--job-bookmark-option": "job-bookmark-enable"
-  #         "--GLUE_DB_NAME": !Ref GlueDatabase
-  #         "--GLUE_PLAYER_LOG_TABLE": !Ref PlayerLogsTable
-  #         "--PLAYER_LOG_BUCKET_PROCESSED_PATH": !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
-  #       ExecutionProperty:
-  #         MaxConcurrentRuns: 2
-  #       MaxRetries: 0
-  #       Name: !Sub "${AWS::StackName}-WatchTimeGlueJob"
-  #       Role: !Ref GlueJobRole
-  #
-  # WatchTimeGlueTrigger:
-  #   Type: AWS::Glue::Trigger
-  #   Properties:
-  #     Type: 'SCHEDULED'
-  #     Description: 'ETL Job to calculate Watch Time'
-  #     Actions:
-  #       - JobName: !Ref WatchTimeGlueJob
-  #         Arguments:
-  #           '--job-bookmark-option': job-bookmark-enable
-  #           '--GLUE_DB_NAME': !Ref GlueDatabase
-  #           '--GLUE_PLAYER_LOG_TABLE': !Ref PlayerLogsTable
-  #           '--PLAYER_LOG_BUCKET_PROCESSED_PATH': !Join ["",["s3://",!Ref PlayerLogsBucket,"/watch_time_processed/"]]
-  #     Schedule: cron(0/5 * * * ? *)
-  #     Name: !Sub "${AWS::StackName}-WatchTime-GlueTrigger"
-  #
-  # WatchTimeLogsTable:
-  #   Type: AWS::Glue::Table
-  #   Properties:
-  #     CatalogId: !Ref AWS::AccountId
-  #     DatabaseName: !Ref GlueDatabase
-  #     TableInput:
-  #       Name: 'watch_time_logs'
-  #       TableType: EXTERNAL_TABLE
-  #       Parameters: {
-  #         "classification": "parquet",
-  #         "typeOfData": "file",
-  #         "compressionType": "none"
-  #       }
-  #       PartitionKeys:
-  #       - Name: partition_key
-  #         Type: string
-  #       StorageDescriptor:
-  #         OutputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat
-  #         Columns:
-  #         - Name: MetricType
-  #           Type: string
-  #         - Name: user_id
-  #           Type: string
-  #         - Name: video_id
-  #           Type: string
-  #         - Name: at
-  #           Type: double
-  #         - Name: TimeStamp
-  #           Type: bigint
-  #         - Name: duration
-  #           Type: int
-  #         - Name: year
-  #           Type: string
-  #         - Name: month
-  #           Type: string
-  #         - Name: day
-  #           Type: string
-  #         - Name: watch_percent
-  #           Type: double
-  #         InputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
-  #         Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/watch_time_processed/']]
-  #         SerdeInfo:
-  #           SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
-
+      - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
   EventIngestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Description: API GW Ingest point for events
-      Name: !Sub ${AWS::StackName}-v1
+      Name:
+        Fn::Sub: ${AWS::StackName}-v1
       FailOnWarnings: true
       EndpointConfiguration:
         Types:
-          - REGIONAL
-
+        - REGIONAL
   EventIngestApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
-      - EventIngestApiPUT
-      - EventIngestApiOPTIONS
+    - EventIngestApiPOST
+    - EventIngestApiOPTIONS
     Properties:
-      RestApiId: !Ref EventIngestApi
+      RestApiId:
+        Ref: EventIngestApi
       StageName: prod2
-
-  EventIngestApiPUT:
-    DependsOn:
-      - PlayerLogsDeliveryStream
+  EventIngestApiPOST:
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
-      HttpMethod: PUT
+      HttpMethod: POST
       Integration:
         Type: AWS
-        Credentials: !GetAtt EventIngestEndpointRole.Arn
+        Credentials:
+          Fn::GetAtt:
+          - EventIngestEndpointRole
+          - Arn
         IntegrationHttpMethod: POST
-        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecordBatch"
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecordBatch
         IntegrationResponses:
-          -
-            StatusCode: '200'
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: "'*'"
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json: |
-            {
-            "DeliveryStreamName": "$input.path('$.DeliveryStreamName')",
-            "Records": [
-              #foreach($elem in $input.path('$.Records'))
-              {
-                  #set($json = $util.parseJson($elem.Data))
-                  #set($json.event_time = $context.requestTimeEpoch)
-                  "Data": "$util.base64Encode($json)"
-              }#if($foreach.hasNext),#end
-              #end
-            ]}
-      ResourceId: !Ref EventIngestApiResource
-      RestApiId: !Ref EventIngestApi
+          application/json:
+            Fn::If:
+            - PushToElasticSearchCondition
+            - Fn::Sub: "#set($data = $input.path('$'))\n#set($records = $input.path('$.Records'))\n\
+                #set($output = \"{ \"\"DeliveryStreamName\"\": \"\"${PlayerLogsESDeliveryStream}\"\
+                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #set($res\
+                \ = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\
+                \": \"\"$rec.Data.client_platform\"\", \"\"channel_watched\"\": \"\
+                \"$rec.Data.channel_watched\"\", \"\"is_live\"\": $rec.Data.is_live,\
+                \ \"\"error_count\"\": $rec.Data.error_count, \"\"playing_time_ms\"\
+                \": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\": $rec.Data.buffering_time_ms,\
+                \ \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\", \"\"rendition_height\"\
+                \": $rec.Data.rendition_height, \"\"startup_latency_ms\"\": $rec.Data.startup_latency_ms,\
+                \ \"\"live_latency_ms\"\": $rec.Data.live_latency_ms, \")\n  #set($res\
+                \ = \"$res\"\"event_time\"\": $context.requestTimeEpoch\")\n  #set($res\
+                \ = \"$res}\")\n  #set($output = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\
+                \"}]}\")\n#end\n$output\n"
+            - Fn::Sub: "#set($data = $input.path('$'))\n#set($records = $input.path('$.Records'))\n\
+                #set($output = \"{ \"\"DeliveryStreamName\"\": \"\"${PlayerLogsDeliveryStream}\"\
+                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #set($res\
+                \ = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\
+                \": \"\"$rec.Data.client_platform\"\", \"\"channel_watched\"\": \"\
+                \"$rec.Data.channel_watched\"\", \"\"is_live\"\": $rec.Data.is_live,\
+                \ \"\"error_count\"\": $rec.Data.error_count, \"\"playing_time_ms\"\
+                \": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\": $rec.Data.buffering_time_ms,\
+                \ \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\", \"\"rendition_height\"\
+                \": $rec.Data.rendition_height, \"\"startup_latency_ms\"\": $rec.Data.startup_latency_ms,\
+                \ \"\"live_latency_ms\"\": $rec.Data.live_latency_ms, \")\n  #set($res\
+                \ = \"$res\"\"event_time\"\": $context.requestTimeEpoch\")\n  #set($res\
+                \ = \"$res}\")\n  #set($output = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\
+                \"}]}\")\n#end\n$output\n"
+      ResourceId:
+        Ref: EventIngestApiResource
+      RestApiId:
+        Ref: EventIngestApi
       MethodResponses:
-        -
-          StatusCode: '200'
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Origin: true
-          ResponseModels: { "application/json": "Empty" }
-
+      - StatusCode: '200'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Origin: true
+        ResponseModels:
+          application/json: Empty
   EventIngestApiOPTIONS:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -798,76 +1027,97 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       Integration:
         Type: MOCK
         IntegrationResponses:
-          -
-            StatusCode: '200'
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         PassthroughBehavior: WHEN_NO_MATCH
         RequestTemplates:
-          application/json: |
-            {"statusCode": 200}
-      ResourceId: !Ref EventIngestApiResource
-      RestApiId: !Ref EventIngestApi
+          application/json: "{\"statusCode\": 200}\n"
+      ResourceId:
+        Ref: EventIngestApiResource
+      RestApiId:
+        Ref: EventIngestApi
       MethodResponses:
-        -
-          StatusCode: '200'
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Origin: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Headers: true
-          ResponseModels: { "application/json": "Empty" }
-
+      - StatusCode: '200'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Origin: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Headers: true
+        ResponseModels:
+          application/json: Empty
   EventIngestApiResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      RestApiId: !Ref EventIngestApi
-      ParentId: !GetAtt EventIngestApi.RootResourceId
+      RestApiId:
+        Ref: EventIngestApi
+      ParentId:
+        Fn::GetAtt:
+        - EventIngestApi
+        - RootResourceId
       PathPart: streams
-
   EventIngestEndpointRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "firehose.amazonaws.com"
-                - "apigateway.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/service-role/"
+          Effect: Allow
+          Principal:
+            Service:
+            - firehose.amazonaws.com
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /service-role/
       ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AmazonKinesisFirehoseFullAccess"
-
+      - arn:aws:iam::aws:policy/AmazonKinesisFirehoseFullAccess
   IVSQoSSummaryDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${AWS::StackName}-QoS-PlayerSummaryDashboard-v1"
-      DashboardBody: !Sub '{"widgets":[{"type":"metric","x":9,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","BUFFER_RATIO","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"p95","period":60,"start":"-PT1H","end":"P0D","title":"Buffer Ratio - p95"}},{"type":"metric","x":0,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","CONCURRENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"Average","period":60,"start":"-PT1H","end":"P0D","title":"Concurrent Users - Avg"}},{"type":"metric","x":0,"y":9,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","ERRORS","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Errors","stat":"Sum","period":60}},{"type":"metric","x":0,"y":0,"width":18,"height":3,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","LIVE_LATENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Live Latency","stat":"Average","period":60}},{"type":"metric","x":9,"y":9,"width":12,"height":6,"properties":{"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Startup Time","stat":"Average","period":60,"metrics":[["${AWS::StackName}-QoS/PlayerSummary","STARTUP_TIME","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]]}}]}'
-
-  # IVSQuizDashboard:
-  #   Type: AWS::CloudWatch::Dashboard
-  #   Properties:
-  #     DashboardName: !Sub "${AWS::StackName}-QoS-QuizSummaryDashboard-v1"
-  #     DashboardBody: !Sub '{"widgets":[{"type":"metric","x":0,"y":0,"width":18,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/Answers","CONCURRENT_USERS","ChannelName","ACROSS_CHANNEL","ClientPlatform","web"],["...","ios"],["...","android"],["...","mobile-web"]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"Average","period":60,"title":"CONCURRENT_USERS"}}]}'
-
+      DashboardName:
+        Fn::Sub: ${AWS::StackName}-QoS-PlayerSummaryDashboard-v1
+      DashboardBody:
+        Fn::Sub: '{"widgets":[{"type":"metric","x":9,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","BUFFER_RATIO","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"p95","period":60,"start":"-PT1H","end":"P0D","title":"Buffer
+          Ratio - p95"}},{"type":"metric","x":0,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","CONCURRENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"Average","period":60,"start":"-PT1H","end":"P0D","title":"Concurrent
+          Users - Avg"}},{"type":"metric","x":0,"y":9,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","ERRORS","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Errors","stat":"Sum","period":60}},{"type":"metric","x":0,"y":0,"width":18,"height":3,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","LIVE_LATENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Live
+          Latency","stat":"Average","period":60}},{"type":"metric","x":9,"y":9,"width":12,"height":6,"properties":{"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Startup
+          Time","stat":"Average","period":60,"metrics":[["${AWS::StackName}-QoS/PlayerSummary","STARTUP_TIME","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]]}}]}'
 Outputs:
   PlayerURL:
-    Value: !Sub https://${CFDistribution.DomainName}/ui/index.html
+    Value:
+      Fn::Sub: https://${CFDistribution.DomainName}/ui/index.html
     Condition: DeployDemoUICondition
   PlayerCWDashboard:
-    Value: !Sub
+    Value:
+      Fn::Sub:
       - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
-      - { DashboardName: !Ref IVSQoSSummaryDashboard}
-  # QuizCWDashboard:
-  #   Value: !Sub
-  #     - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}
-  #     - { DashboardName: !Ref IVSQuizDashboard}
+      - DashboardName:
+          Ref: IVSQoSSummaryDashboard
   RealTimeAnalyticsApp:
-    Value: !Sub
+    Value:
+      Fn::Sub:
       - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
-      - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }
+      - KinesisAnalyticsApp:
+          Ref: RealtimeAnalytics
+  sendQoSEventUrl:
+    Value:
+      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+  sendQuizEventUrl:
+    Value:
+      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+  DeliveryStreamName:
+    Value:
+      Fn::If:
+      - PushToElasticSearchCondition
+      - Ref: PlayerLogsESDeliveryStream
+      - Ref: PlayerLogsDeliveryStream
+  LiveURL:
+    Value:
+      Ref: LiveURL
+  DeliveryRoleArn:
+    Value:
+      Fn::GetAtt:
+      - DeliveryRole
+      - Arn

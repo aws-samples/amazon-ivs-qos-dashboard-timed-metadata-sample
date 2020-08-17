@@ -25,6 +25,8 @@ build:
 	docker run --rm --volume ${PWD}/lambda-functions/playersummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 	docker run --rm --volume ${PWD}/lambda-functions/quizsummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 	docker run --rm --volume ${PWD}/lambda-functions/add-partition-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
+	mkdir -p ${PWD}/lambda-functions/record-validation-function/package
+	docker run -it --rm --volume ${PWD}/lambda-functions/record-validation-function:/build amazonlinux:${docker_image} /bin/bash -c "pip install --target=./package -r requirements.txt"
 
 package:
 	mkdir -p dist && cd lambda-functions/deploy-function && zip -x \.* event.json \*.yaml -FS -q -r ../../dist/deploy-function.zip * && cd ../..
@@ -32,6 +34,7 @@ package:
 	mkdir -p dist && cd lambda-functions/quizsummary-cw-function && zip -FS -q -r ../../dist/quizsummary-cw-function.zip * && cd ../..
 	mkdir -p dist && cd lambda-functions/add-partition-function && zip -FS -q -r ../../dist/add-partition-function.zip * && cd ../..
 	mkdir -p dist && cd web/IVSplayer && zip -FS -q -r ../../dist/player-ui.zip * && cd ../../..
+	mkdir -p dist && cd lambda-functions/record-validation-function/package && zip -FS -q -r ../../../dist/record-validation-function.zip * && cd .. && zip -g ../../dist/record-validation-function.zip *.py && zip -g ../../dist/record-validation-function.zip *.json && cd ../../..
 
 creates3:
 	@for region in $(regions);do \
@@ -71,7 +74,7 @@ deploy:
 	aws package --template-file cloudformation/sam_input.yaml --s3-bucket $(bucket)-eu-west-1 --s3-prefix sam/lambda-functions --output-template-file cloudformation/deployment.yaml --profile $(profile); \
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides DeployDemoUI=true LiveURL=
+	--parameter-overrides DeployDemoUI=true LiveURL=  PushToElasticSearch=false ElasticSearchDomainArn=${es_arn}
 
 clean:
 	rm -r dist/*

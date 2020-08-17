@@ -6,12 +6,12 @@ Mappings:
     SourceCodeBucket:
       General:
         S3Bucket: 'BUCKET_NAME'
-        LambdaUIDeploymentCodePrefix: 'qos/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/lambda-functions/add-partition-function'
+        LambdaUIDeploymentCodePrefix: 'qos/VERSION/lambda-functions/ui-deployment'
+        PlayerSummaryCWCodePrefix: 'qos/VERSION/lambda-functions/playersummary-cw-function'
+        QuizSummaryCWCodePrefix: 'qos/VERSION/lambda-functions/quizsummary-cw-function'
+        AddPartitionFunctionCodePrefix: 'qos/VERSION/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
-        Version: 'VERSION'
+        # Version: 'VERSION'
 
 Parameters:
   LiveURL:
@@ -40,11 +40,12 @@ Parameters:
   ElasticSearchIndexName:
     Type: String
     Description: ElasticSearch Index Name
-    Default: esindex
+    Default: player_summary
 
   ElasticSearchIndexRotation:
     Type: String
     Description: Index Rotation Interval
+    Default: None
     AllowedValues:
       - None
       - Hour
@@ -285,7 +286,7 @@ Resources:
         Variables:
           SourceBucket: !Ref SourceBucket
           SourceFileBucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
-          SourceUIFilePath: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "UICodePrefix"], !FindInMap ["SourceCodeBucket", "General", "Version"], "player-ui.zip"]]
+          SourceUIFilePath: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "UICodePrefix"], "player-ui.zip"]]
           UIPrefix: 'ui'
           PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
           AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
@@ -301,7 +302,7 @@ Resources:
     DependsOn:
       - CFDistribution
     Properties:
-      DeliveryStreamName: 
+      DeliveryStreamName:
         !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream]
       PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
       AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
@@ -342,6 +343,20 @@ Resources:
                   - cloudwatch:PutMetricAlarm
                   - cloudwatch:PutMetricData
                 Resource: "*"
+
+  RecordValidationFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: ../dist/record-validation-function.zip
+      MemorySize: 512
+      Handler: function.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300
+      Runtime: python3.8
+      Environment:
+        Variables:
+          BUCKET_VALIDATION_DEFS: !Ref PlayerLogsBucket
+          BUCKET_VALIDATION_FILE: '/record/validations.json'
 
   PlayerSummaryCWFunction:
     Type: 'AWS::Serverless::Function'
@@ -484,7 +499,7 @@ Resources:
     Properties:
       LogGroupName: !Ref KinesisFirehoseLogGroup
       LogStreamName: "playerlogstream"
-  
+
   KinesisFirehoseESLogStream:
     Type: AWS::Logs::LogStream
     Properties:
@@ -500,7 +515,9 @@ Resources:
           - Sid: ''
             Effect: Allow
             Principal:
-              Service: firehose.amazonaws.com
+              Service:
+                - firehose.amazonaws.com
+                - lambda.amazonaws.com
             Action: 'sts:AssumeRole'
             Condition:
               StringEquals:
@@ -604,12 +621,12 @@ Resources:
             Resource:
               - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
               - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
-          # - Effect: Allow
-          #   Action:
-          #     - "lambda:InvokeFunction"
-          #     - "lambda:GetFunctionConfiguration"
-          #   Resource:
-          #     - !Sub "${ProcessKinesisFirehoseFunction.Arn}:$LATEST"
+          - Effect: Allow
+            Action:
+              - "lambda:InvokeFunction"
+              - "lambda:GetFunctionConfiguration"
+            Resource:
+              - !Sub "${RecordValidationFunction.Arn}:$LATEST"
       Roles:
         - !Ref DeliveryRole
 
@@ -623,11 +640,11 @@ Resources:
       DeliveryStreamType: DirectPut
       DeliveryStreamName: !Sub '${AWS::StackName}-playerlogs-es-stream'
       ElasticsearchDestinationConfiguration:
-        BufferingHints: 
-          IntervalInSeconds: 60 
+        BufferingHints:
+          IntervalInSeconds: 60
           SizeInMBs: 5
-        CloudWatchLoggingOptions: 
-          Enabled: true 
+        CloudWatchLoggingOptions:
+          Enabled: true
           LogGroupName: !Ref KinesisFirehoseLogGroup
           LogStreamName: !Ref KinesisFirehoseESLogStream
         DomainARN: !Ref ElasticSearchDomainArn
@@ -635,20 +652,35 @@ Resources:
         IndexRotationPeriod: "NoRotation"
         #Types are deprecated in ES7.7
         #TypeName: !Ref ElasticSearchType
-        RetryOptions: 
+        ProcessingConfiguration:
+          Enabled: true
+          Processors:
+            - Type: Lambda
+              Parameters:
+                - ParameterName: BufferSizeInMBs
+                  ParameterValue: 3
+                - ParameterName: LambdaArn
+                  ParameterValue: !GetAtt RecordValidationFunction.Arn
+                - ParameterName: NumberOfRetries
+                  ParameterValue: 1
+                - ParameterName: BufferIntervalInSeconds
+                  ParameterValue: 60
+                - ParameterName: RoleArn
+                  ParameterValue: !GetAtt DeliveryRole.Arn
+        RetryOptions:
           DurationInSeconds: 60
         RoleARN: !GetAtt DeliveryRole.Arn
-        S3BackupMode: "AllDocuments" 
-        S3Configuration: 
+        S3BackupMode: "AllDocuments"
+        S3Configuration:
           BucketARN: !Sub 'arn:aws:s3:::${PlayerLogsBucket}'
-          BufferingHints: 
+          BufferingHints:
             IntervalInSeconds: 60
             SizeInMBs: 50
-          CompressionFormat: "UNCOMPRESSED" 
-          Prefix: player_logs/ 
+          CompressionFormat: "UNCOMPRESSED"
+          Prefix: player_logs/
           RoleARN: !GetAtt DeliveryRole.Arn
-          CloudWatchLoggingOptions: 
-            Enabled: true 
+          CloudWatchLoggingOptions:
+            Enabled: true
             LogGroupName: !Ref KinesisFirehoseLogGroup
             LogStreamName: !Ref KinesisFirehoseLogStream
 
@@ -760,7 +792,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
                 JSONMappingParameters:
                   RecordRowPath: "$"
           KinesisFirehoseInput:
-            ResourceARN: 
+            ResourceARN:
               !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
             RoleARN: !GetAtt KinesisAnalyticsRole.Arn
 
@@ -921,7 +953,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
           application/json:
-            !If 
+            !If
               - PushToElasticSearchCondition
               - !Sub |
                 #set($data = $input.path('$'))

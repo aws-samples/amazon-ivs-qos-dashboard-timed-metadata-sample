@@ -1,0 +1,18 @@
+{
+      "type": "object",
+      "properties": {
+          "metric_type": {"type": "string"},
+          "error_count": {"type": "number"},
+          "playing_time_ms": {"type": "number"},
+          "is_live": {"type": "boolean"},
+          "client_platform": {"type": "string"},
+          "channel_watched": {"type": "string"},
+          "buffering_time_ms": {"type": "integer"},
+          "rendition_name": {"type": "string"},
+          "rendition_height": {"type": "integer"},
+          "startup_latency_ms": {"type": "integer"},
+          "live_latency_ms": {"type": "integer"},
+          "event_time": {"type": "integer"}
+      },
+      "required": ["metric_type","event_time"]
+}
