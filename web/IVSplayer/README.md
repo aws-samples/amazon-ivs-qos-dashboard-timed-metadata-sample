@@ -161,26 +161,26 @@ To execute the test plan, you might need to use the Chrome Developer Tool's "Net
 
 Test plan:
 
-- 1. Good network condition - Play the test channel under a reliable network condition having >10mbps bandwidth;
+- #1 Good network condition - Play the test channel under a reliable network condition having >10mbps bandwidth;
 
-- 2. Changing network contiion - Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event;
+- #2 Changing network contiion - Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event;
 
-- 3. Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event.
+- #3 Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event.
 
 Reference test result:
 
 | Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
 | --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
-| 1 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
-|   | Following | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
-| 2 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
-|   | 2nd       | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
-|   | 3rd       | 0s  | >55s | <5s | 360 | <6s | ~0 |
-|   | 4th       | 0s  | ~60s | ~0s | 360 | <6s | ~0 |
-| 3 | 1st       | ~5s | ~55s | ~0s | 360 | <5s | ~0 |
-|   | 2nd       | 0s  | ~60s | ~0s | 360 | <5s | ~0 |
-|   | 3rd       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
-|   | 4th       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
+| #1 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
+|    | Following | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+| #2 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
+|    | 2nd       | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+|    | 3rd       | 0s  | >55s | <5s | 360 | <6s | ~0 |
+|    | 4th       | 0s  | ~60s | ~0s | 360 | <6s | ~0 |
+| #3 | 1st       | ~5s | ~55s | ~0s | 360 | <5s | ~0 |
+|    | 2nd       | 0s  | ~60s | ~0s | 360 | <5s | ~0 |
+|    | 3rd       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
+|    | 4th       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
 
 Below are the screenshots of the console output for test case 2 & 3, also see section 2.2 for the console output for test case 1.
 
