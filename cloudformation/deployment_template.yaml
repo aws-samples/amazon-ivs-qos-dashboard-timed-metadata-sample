@@ -949,7 +949,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
             StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates: {"application/json": "{'status': '200OK'}"}
+            ResponseTemplates: {"application/json": "Empty"}
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
           application/json:
