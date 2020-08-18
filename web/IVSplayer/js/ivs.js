@@ -1,28 +1,42 @@
-// Note: Search the key word "QoS event" for the implementation of constructing
-//   and sending QoS playback events. Also, search the key word "timed metadata
-//   feedback event" for that of quiz answer events. Sample backend implementation
-//   is documented at https://code.amazon.com/packages/StarfruitQoS
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-// URL for the player App to send QoS event or timed metadata feedback event
-import {config} from "./config.js";
-const sendQoSEventUrl = ""; // (to implement, will ask Jai)
-const sendQuizAnswerUrl = "";
-const playbackUrl = config.LiveURL;
-const quizEl = $("#quiz");
-const waitMessage = $("#waiting");
-const questionEl = $("#question");
-const answersEl = $("#answers");
-const cardInnerEl = $(".card-inner");
+import {config} from "./config.js"; // see comments in config.js for the purposes of the URLs
+const playbackUrl = config.PlaybackURL;
+const sendQoSEventUrl = config.SendQoSEventURL;
+const sendQuizAnswerUrl = config.SendQuizAnswerURL;
 
-(function (MediaPlayerPackage) {
-  const PlayerState = MediaPlayerPackage.PlayerState;
-  const PlayerEventType = MediaPlayerPackage.PlayerEventType;
+const videoPlayer = document.getElementById("video-player");
+const quizEl = document.getElementById("quiz");
+const waitMessage = document.getElementById("waiting");
+const questionEl = document.getElementById("question");
+const answersEl = document.getElementById("answers");
+const cardInnerEl = document.getElementById("card-inner");
+
+(function (IVSPlayer) {
+  const PlayerState = IVSPlayer.PlayerState;
+  const PlayerEventType = IVSPlayer.PlayerEventType;
 
   // Initialize player
-  const player = MediaPlayerPackage.create();
-  player.attachHTMLVideoElement(document.getElementById("video-player"));
+  const player = IVSPlayer.create();
+  player.attachHTMLVideoElement(videoPlayer);
 
-  // Define and initialize QoS event work variables
+  // === Define and initialize QoS event work variables ===
   var hasPlayedAnyContent = false;
   var lastCallingLoadTime = -1; // milliseconds since Epoch, UTC
   var currentEventBeginTime = -1; // milliseconds since Epoch, UTC
@@ -34,20 +48,22 @@ const cardInnerEl = $(".card-inner");
   var playingTimeMsInLastMinute = 0;
   var bufferingTimeMsInLastMinute = 0;
   var errorCountInLastMinute = 0;
+  // === Define and initialize QoS event work variables ===
 
   // Attach event (player state) listeners
   player.addEventListener(PlayerState.READY, function () {
     console.log("Player State - READY");
 
-    // Update QoS event work variables
+    // === Update QoS event work variables ===
     lastRecordedPlayerState = "READY";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to ", lastRecordedPlayerStateTime);
+    // === Update QoS event work variables ===
   });
   player.addEventListener(PlayerState.BUFFERING, function () {
     console.log("Player State - BUFFERING");
 
-    // Update QoS event work variables
+    // === Update QoS event work variables ===
     if (lastRecordedPlayerState == "PLAYING") {
       playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
       console.log("Update playingTimeMsInLastMinute to", playingTimeMsInLastMinute);
@@ -56,12 +72,13 @@ const cardInnerEl = $(".card-inner");
     lastRecordedPlayerState = "BUFFERING";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to", lastRecordedPlayerStateTime);
+    // === Update QoS event work variables ===
   });
   player.addEventListener(PlayerState.PLAYING, function () {
     console.log("Player State - PLAYING");
 
-    // Update QoS event work variables
-    if (!hasReportedStartupMsOfThisChannel) {
+    // === Update QoS event work variables ===
+    if (startupLatencyMsOfThisSession == 0) {
       startupLatencyMsOfThisSession = Date.now() - lastCallingLoadTime;
       console.log("Set startupLatencyMsOfThisSession to", startupLatencyMsOfThisSession);
     } else if (lastRecordedPlayerState == "BUFFERING") {
@@ -72,11 +89,12 @@ const cardInnerEl = $(".card-inner");
     lastRecordedPlayerState = "PLAYING";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to", lastRecordedPlayerStateTime);
+    // === Update QoS event work variables ===
   });
   player.addEventListener(PlayerState.IDLE, function () {
     console.log("Player State - IDLE");
 
-    // Update QoS event work variables
+    // === Update QoS event work variables ===
     if (lastRecordedPlayerState == "PLAYING") {
       playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
       console.log("Update playingTimeMsInLastMinute to", playingTimeMsInLastMinute);
@@ -88,11 +106,12 @@ const cardInnerEl = $(".card-inner");
     lastRecordedPlayerState = "IDLE";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to", lastRecordedPlayerStateTime);
+    // === Update QoS event work variables ===
   });
   player.addEventListener(PlayerState.ENDED, function () {
     console.log("Player State - ENDED");
 
-    // Update QoS event work variables
+    // === Update QoS event work variables ===
     if (lastRecordedPlayerState == "PLAYING") {
       playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
       console.log("Update playingTimeMsInLastMinute to", playingTimeMsInLastMinute);
@@ -101,31 +120,31 @@ const cardInnerEl = $(".card-inner");
     lastRecordedPlayerState = "END";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to", lastRecordedPlayerStateTime);
+    // === Update QoS event work variables ===
   });
 
   // Attach event (error) listeners
   player.addEventListener(PlayerEventType.ERROR, function (err) {
     console.warn("Player Event - ERROR:", err);
 
-    // Update QoS event work variables
+    // === Update QoS event work variables ===
     errorCountInLastMinute++;
     console.log("Update errorCountInLastMinute to", errorCountInLastMinute);
+    // === Update QoS event work variables ===
   });
 
   // Attach event (timed metadata) listeners
-  player.addEventListener(PlayerEventType.METADATA, (metadata) => {
-    if (metadata.type === "text/plain") {
-      const metadataText = metadata.data;
-      const position = player.getPosition().toFixed(2);
-      console.log(
-        `PlayerEvent - METADATA: "${metadataText}". Observed ${position}s after playback started.`
-      );
-      quizEl.removeClass("drop").show();
-      waitMessage.hide();
-      triggerQuiz(metadataText);
-    }
+  player.addEventListener(PlayerEventType.TEXT_METADATA_CUE, function (cue) {
+    console.log("Timed metadata: ", cue.text);
+    const metadataText = cue.text;
+    const position = player.getPosition().toFixed(2);
+    console.log(
+      `PlayerEvent - METADATA: "${metadataText}". Observed ${position}s after playback started.`
+    );
+    triggerQuiz(metadataText);
   });
 
+  // === QoS event workflow initialization ===
   // Before the player loads a new channel, send off a QoS event if the player is playing
   //   another channel
   // Note: This will never happens in this demo, because the demo doesn't offer an interface
@@ -152,6 +171,7 @@ const cardInnerEl = $(".card-inner");
   playingTimeMsInLastMinute = 0;
   bufferingTimeMsInLastMinute = 0;
   errorCountInLastMinute = 0;
+  // === QoS event workflow initialization ===
 
   // Maintain low latency during network glitches
   player.setRebufferToLive(true);
@@ -160,14 +180,10 @@ const cardInnerEl = $(".card-inner");
   player.setAutoplay(true);
   player.load(playbackUrl);
 
-  // Set volume
-  player.setVolume(0.08);
+  // Setvolume
+  player.setVolume(0.1);
 
-  // Display the wait message window
-  quizEl.hide();
-  waitMessage.show();
-
-  // Send off a QoS event every minute
+  // === Send off a QoS event every minute ===
   setInterval(function () {
     if ((Date.now() - currentEventBeginTime) > 60000) { // one QoS event every minute
       // Send off a QoS event
@@ -180,7 +196,7 @@ const cardInnerEl = $(".card-inner");
       }
 
       if ((playingTimeMsInLastMinute > 0) || (bufferingTimeMsInLastMinute > 0)) {
-        sendQoSEvent(config.sendQoSEventUrl);
+        sendQoSEvent(sendQoSEventUrl);
       }
 
       // Reset work variables
@@ -191,40 +207,62 @@ const cardInnerEl = $(".card-inner");
       errorCountInLastMinute = 0;
     }
   }, 1000);
+  // === Send off a QoS event every minute ===
 
   // Remove card
   function removeCard() {
-    quizEl.addClass("drop");
+    quizEl.classList.toggle("drop");
   }
 
   // Trigger quiz
   function triggerQuiz(metadataText) {
     let obj = JSON.parse(metadataText);
-    cardInnerEl.fadeOut("fast");
-    answersEl.empty();
-    questionEl.text(obj.question);
+
+    quizEl.style.display = "";
+    quizEl.classList.remove("drop");
+    waitMessage.style.display = "none";
+    cardInnerEl.style.display = "none";
+    cardInnerEl.style.pointerEvents = "auto";
+
+    while (answersEl.firstChild) answersEl.removeChild(answersEl.firstChild);
+    questionEl.textContent = obj.question;
+
+    let createAnswers = function (obj, i) {
+      let q = document.createElement("a");
+      let qText = document.createTextNode(obj.answers[i]);
+      answersEl.appendChild(q);
+      q.classList.add("answer");
+      q.appendChild(qText);
+
+      q.addEventListener("click", (event) => {
+        cardInnerEl.style.pointerEvents = "none";
+        if (q.textContent === obj.answers[obj.correctIndex]) {
+          q.classList.toggle("correct");
+        } else {
+          q.classList.toggle("wrong");
+        }
+
+        // === send off a timed metadata feedback event ===
+        sendQuizAnswer(sendQuizAnswerUrl, obj.question, q.textContent);
+        // === send off a timed metadata feedback event ===
+
+        setTimeout(function () {
+          removeCard();
+          waitMessage.style.display = "";
+        }, 1050);
+        return false;
+      });
+    };
+
     for (var i = 0; i < obj.answers.length; i++) {
-      answersEl.append($('<a href="#" class="answer">' + obj.answers[i] + '</a>'));
+      createAnswers(obj, i);
     }
-    cardInnerEl.fadeIn("fast");
-    $(".answer").click(function () {
-      if (this.text === obj.answers[obj.correctIndex]) {
-        $(this).addClass("correct");
-      } else {
-        $(this).addClass("wrong");
-      }
-
-      // send off a timed metadata feedback event
-      sendQuizAnswer(config.sendQuizAnswerUrl, obj.question, this.text);
-
-      setTimeout(function () {
-        removeCard();
-        waitMessage.show();
-      }, 1050);
-      return false;
-    });
+    cardInnerEl.style.display = "";
   }
 
+  waitMessage.style.display = "";
+
+  // === subroutines for sending QoS and timed metadata events ===
   // Send QoS event
   function sendQoSEvent(url) {
     var myJson = {};
@@ -258,35 +296,11 @@ const cardInnerEl = $(".card-inner");
 
     if (url != "") {
       pushPayload(url,myJson);
-      // (to implement, will ask Jai)
     }
 
     console.log("sendQoSEvent ", JSON.stringify(myJson), "to", url);
   }
 
-  function pushPayload(endpoint, payload){
-      let wrapPayload = {};
-      //wrapPayload.DeliveryStreamName = config.DeliveryStreamName;
-      wrapPayload.Records = [];
-      let record = {
-          Data: payload
-      };
-      wrapPayload.Records.push(record);
-      console.log("Record :%j",wrapPayload);
-
-      $.ajax({
-        url: endpoint,
-        type: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: JSON.stringify(wrapPayload)
-      }).done(function(){
-        console.log("Success ");
-      }).fail(function(){
-        console.log("Error");
-      });
-  }
   // Send timed metadata feedback event
   function sendQuizAnswer(url, question, answer) {
     var myJson = {};
@@ -295,10 +309,34 @@ const cardInnerEl = $(".card-inner");
     myJson.answer = answer;
 
     if (url != "") {
-      // (to implement, will ask Jai)
       pushPayload(url,myJson);
     }
 
     console.log("sendQuizAnswer ", JSON.stringify(myJson), "to", url);
   }
-})(window.MediaPlayer);
+
+  function pushPayload(endpoint, payload){
+    let wrapPayload = {};
+    wrapPayload.Records = [];
+    let record = {
+        Data: payload
+    };
+    wrapPayload.Records.push(record);
+    console.log("Record :%j",wrapPayload);
+
+    $.ajax({
+      url: endpoint,
+      type: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify(wrapPayload)
+    }).done(function(){
+      console.log("Success ");
+    }).fail(function(){
+      console.log("Error");
+    });
+  }
+  // === subroutines for sending QoS and timed metadata events ===
+
+})(window.IVSPlayer);
