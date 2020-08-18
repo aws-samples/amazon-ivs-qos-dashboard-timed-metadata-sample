@@ -623,10 +623,9 @@ Resources:
               - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
-              - "lambda:InvokeFunction"
-              - "lambda:GetFunctionConfiguration"
+              - "lambda:*"
             Resource:
-              - !Sub "${RecordValidationFunction.Arn}:$LATEST"
+              - !Sub "${RecordValidationFunction.Arn}*"
       Roles:
         - !Ref DeliveryRole
 
