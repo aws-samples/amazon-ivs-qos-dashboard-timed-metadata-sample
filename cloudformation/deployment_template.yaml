@@ -14,7 +14,7 @@ Mappings:
         # Version: 'VERSION'
 
 Parameters:
-  LiveURL:
+  PlaybackURL:
     Type: String
 
   DeployDemoUI:
@@ -288,9 +288,9 @@ Resources:
           SourceFileBucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
           SourceUIFilePath: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "UICodePrefix"], "player-ui.zip"]]
           UIPrefix: 'ui'
-          PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-          LIVE_URL: !Ref LiveURL
+          PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
+          AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
+          Playback_URL: !Ref PlaybackURL
       Handler: index.handler
       Role: !GetAtt DeployFunctionRole.Arn
       Timeout: 300
@@ -304,8 +304,8 @@ Resources:
     Properties:
       DeliveryStreamName:
         !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream]
-      PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
-      AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams'
+      PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
+      AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
       Region: !Sub ${AWS::Region}
       CloudFrontDomain: !Sub https://${CFDistribution.DomainName}/
       # CloudFrontDomain: 'test'
@@ -623,10 +623,9 @@ Resources:
               - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
-              - "lambda:InvokeFunction"
-              - "lambda:GetFunctionConfiguration"
+              - "lambda:*"
             Resource:
-              - !Sub "${RecordValidationFunction.Arn}:$LATEST"
+              - !Sub "${RecordValidationFunction.Arn}*"
       Roles:
         - !Ref DeliveryRole
 
@@ -931,7 +930,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       - EventIngestApiOPTIONS
     Properties:
       RestApiId: !Ref EventIngestApi
-      StageName: prod2
+      StageName: prod
 
   EventIngestApiPOST:
     #DependsOn:
@@ -950,7 +949,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
             StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates: {"application/json": "{'status': '200OK'}"}
+            ResponseTemplates: {"application/json": "{ }"}
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
           application/json:
@@ -961,7 +960,12 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
                 #set($records = $input.path('$.Records'))
                 #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsESDeliveryStream}"", ""Records"": [{ ")
                 #foreach($rec in $records)
-                  #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #if($rec.Data.metric_type == "PLAYBACK_SUMMARY")
+                      #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #end
+                  #if($rec.Data.metric_type == "QUIZ_ANSWER")
+                        #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""question"": ""$rec.Data.question"", ""answer"": ""$rec.Data.answer"",")
+                  #end
                   #set($res = "$res""event_time"": $context.requestTimeEpoch")
                   #set($res = "$res}")
                   #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
@@ -972,7 +976,12 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
                 #set($records = $input.path('$.Records'))
                 #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsDeliveryStream}"", ""Records"": [{ ")
                 #foreach($rec in $records)
-                  #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #if($rec.Data.metric_type == "PLAYBACK_SUMMARY")
+                      #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+                  #end
+                  #if($rec.Data.metric_type == "QUIZ_ANSWER")
+                        #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""question"": ""$rec.Data.question"", ""answer"": ""$rec.Data.answer"",")
+                  #end
                   #set($res = "$res""event_time"": $context.requestTimeEpoch")
                   #set($res = "$res}")
                   #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
@@ -1069,12 +1078,12 @@ Outputs:
       - https://${AWS::Region}.console.aws.amazon.com/kinesisanalytics/home?region=${AWS::Region}#/wizard/hub?applicationName=${KinesisAnalyticsApp}
       - { KinesisAnalyticsApp: !Ref RealtimeAnalytics }
   sendQoSEventUrl:
-    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
   sendQuizEventUrl:
-    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+    Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
   DeliveryStreamName:
     Value: !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream ]
-  LiveURL:
-    Value: !Ref LiveURL
+  PlaybackURL:
+    Value: !Ref PlaybackURL
   DeliveryRoleArn:
     Value: !GetAtt DeliveryRole.Arn
