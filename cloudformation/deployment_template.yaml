@@ -44,13 +44,13 @@ Parameters:
   ElasticSearchIndexRotation:
     Type: String
     Description: Index Rotation Interval
-    Default: None
+    Default: NoRotation
     AllowedValues:
-      - None
-      - Hour
-      - Day
-      - Week
-      - Month
+      - NoRotation
+      - OneHour
+      - OneDay
+      - OneWeek
+      - OneMonth
 
   # Types are deprecated in ES7.7, enable this if using older release of ES
   # ElasticSearchType:
@@ -655,13 +655,13 @@ Resources:
             - Type: Lambda
               Parameters:
                 - ParameterName: BufferSizeInMBs
-                  ParameterValue: 3
+                  ParameterValue: "3"
                 - ParameterName: LambdaArn
                   ParameterValue: !GetAtt RecordValidationFunction.Arn
                 - ParameterName: NumberOfRetries
-                  ParameterValue: 1
+                  ParameterValue: "1"
                 - ParameterName: BufferIntervalInSeconds
-                  ParameterValue: 60
+                  ParameterValue: "60"
                 - ParameterName: RoleArn
                   ParameterValue: !GetAtt DeliveryRole.Arn
         RetryOptions:
