@@ -11,5 +11,4 @@ cloudformation/deployment_package.yaml
 # Python dependencies
 package/
 
-package-lock.json
 yarn.lock
