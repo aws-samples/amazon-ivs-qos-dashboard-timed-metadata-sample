@@ -221,7 +221,6 @@ Resources:
       Path: /service-role/
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        - 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'
       Policies:
         - PolicyName: CustomPolicy
           PolicyDocument:
@@ -249,7 +248,6 @@ Resources:
           Principal:
             Service:
               - lambda.amazonaws.com
-              - s3.amazonaws.com
 
   DeployFunction:
     Type: 'AWS::Serverless::Function'
