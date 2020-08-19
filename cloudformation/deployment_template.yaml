@@ -664,13 +664,22 @@ Resources:
             Action: "sts:AssumeRole"
       Path: "/"
       Policies:
-        - PolicyName: Open
+        - PolicyName: ReadFirehoseInvokeLambda
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: "*"
-                Resource: "*"
+                Action:
+                  - "firehose:DescribeDeliveryStream"
+                  - "firehose:Get*"
+                Resource: !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                  - "lambda:GetFunctionConfiguration"
+                Resource:
+                  - !GetAtt PlayerSummaryCWFunction.Arn
+                  - !GetAtt QuizSummaryCWFunction.Arn
 
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
