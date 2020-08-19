@@ -18,7 +18,7 @@ const SourceUIFilePath = process.env.SourceUIFilePath;
 const UIPrefix = process.env.UIPrefix;
 const PlayerSummaryEndpoint = process.env.PlayerSummaryEndpoint;
 const AnswerSummaryEndpoint = process.env.AnswerSummaryEndpoint;
-const LIVE_URL = process.env.LIVE_URL;
+const Playback_URL = process.env.Playback_URL;
 
 exports.handler = function(event, context) {
 
@@ -39,7 +39,7 @@ exports.handler = function(event, context) {
   let jobs = Promise.all([uploadUIAssets(event)]);
 
   jobs.then(args => {
-  
+
    sendResponse(event, context, responseStatus, responseData);
   });
  }
@@ -72,7 +72,7 @@ function uploadUIAssets(event) {
       fileContents = fileContents.toString().replace('DELIVERY_STREAM_NAME', event.ResourceProperties.DeliveryStreamName);
       fileContents = fileContents.replace('PLAYER_SUMMARY_ENDPOINT', event.ResourceProperties.PlayerSummaryEndpoint);
       fileContents = fileContents.replace('ANSWER_SUMMARY_ENDPOINT', event.ResourceProperties.AnswerSummaryEndpoint);
-      fileContents = fileContents.replace('LIVE_URL', LIVE_URL);
+      fileContents = fileContents.replace('PLAYBACK_URL', Playback_URL);
      }
 
      S3.putObject({

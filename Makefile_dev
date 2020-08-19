@@ -8,12 +8,12 @@ regions = eu-west-1
 # set to AWS CLI profile name to use
 profile = default
 # set Stack Name
-stack_name = ivsqos4
+stack_name = ivsqos5
 # set the name of Docket Image which will be build
-docker_image = ivsqos4
+docker_image = ivsqos5
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
-version = ivsqosv4
-live_url = https://b1a2a57a7ffd.eu-west-1.playback.live-video.net/api/video/v1/eu-west-1.444603092185.channel.tbHb69cdvlbk.m3u8
+version = ivsqosv5
+live_url = https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
 es_arn = arn:aws:es:eu-west-1:444603092185:domain/ivs-qos-v2
 
 all: image build package copycodeww copytemplateww deploy
@@ -74,7 +74,7 @@ distpackage:
 deploy:
 	aws cloudformation deploy --template-file cloudformation/deployment.yaml \
 	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides DeployDemoUI=true LiveURL=${live_url} PushToElasticSearch=true ElasticSearchDomainArn=${es_arn}
+	--parameter-overrides DeployDemoUI=true LiveURL=${live_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn}
 
 clean:
 	rm -r dist/*

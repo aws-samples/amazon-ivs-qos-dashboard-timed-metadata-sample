@@ -5,10 +5,10 @@ Mappings:
   SourceCodeBucket:
     General:
       S3Bucket: ganeshji-sfqos
-      LambdaUIDeploymentCodePrefix: qos/ivsqosv4/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/ivsqosv4/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/ivsqosv4/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/ivsqosv4/lambda-functions/add-partition-function
+      LambdaUIDeploymentCodePrefix: qos/ivsqosv5/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/ivsqosv5/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/ivsqosv5/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/ivsqosv5/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   LiveURL:
@@ -299,7 +299,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/42dd6354380c274060dd4f02a9c24921
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/ef5b347d458c78d29e5ec229df36b895
       MemorySize: 512
       Environment:
         Variables:
@@ -415,7 +415,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/a7d2b37a3ef0050712fb9f4e3c5cd518
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/9d133e40897efa8fd845e35188d6b286
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -431,7 +431,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/581cf1bc2d558d756dbe6b2b1b89c2ef
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/30854dd6eefa59366d0937ae78fd35a4
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -508,7 +508,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/cc2fe339e1c0dd52e58fa9fc793bf443
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/7a3b48a533fea7ae9d5120b3d1c8f218
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -698,10 +698,9 @@ Resources:
           - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}
         - Effect: Allow
           Action:
-          - lambda:InvokeFunction
-          - lambda:GetFunctionConfiguration
+          - lambda:*
           Resource:
-          - Fn::Sub: ${RecordValidationFunction.Arn}:$LATEST
+          - Fn::Sub: ${RecordValidationFunction.Arn}*
       Roles:
       - Ref: DeliveryRole
   PlayerLogsESDeliveryStream:
@@ -977,7 +976,7 @@ Resources:
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: "'*'"
           ResponseTemplates:
-            application/json: "{'status': '200OK'}"
+            application/json: '{ }'
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
           application/json:
@@ -985,32 +984,40 @@ Resources:
             - PushToElasticSearchCondition
             - Fn::Sub: "#set($data = $input.path('$'))\n#set($records = $input.path('$.Records'))\n\
                 #set($output = \"{ \"\"DeliveryStreamName\"\": \"\"${PlayerLogsESDeliveryStream}\"\
-                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #set($res\
-                \ = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\
-                \": \"\"$rec.Data.client_platform\"\", \"\"channel_watched\"\": \"\
-                \"$rec.Data.channel_watched\"\", \"\"is_live\"\": $rec.Data.is_live,\
-                \ \"\"error_count\"\": $rec.Data.error_count, \"\"playing_time_ms\"\
-                \": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\": $rec.Data.buffering_time_ms,\
-                \ \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\", \"\"rendition_height\"\
-                \": $rec.Data.rendition_height, \"\"startup_latency_ms\"\": $rec.Data.startup_latency_ms,\
-                \ \"\"live_latency_ms\"\": $rec.Data.live_latency_ms, \")\n  #set($res\
-                \ = \"$res\"\"event_time\"\": $context.requestTimeEpoch\")\n  #set($res\
-                \ = \"$res}\")\n  #set($output = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\
-                \"}]}\")\n#end\n$output\n"
+                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #if($rec.Data.metric_type\
+                \ == \"PLAYBACK_SUMMARY\")\n      #set($res = \"{ \"\"metric_type\"\
+                \": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\": \"\"$rec.Data.client_platform\"\
+                \", \"\"channel_watched\"\": \"\"$rec.Data.channel_watched\"\", \"\
+                \"is_live\"\": $rec.Data.is_live, \"\"error_count\"\": $rec.Data.error_count,\
+                \ \"\"playing_time_ms\"\": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\
+                \": $rec.Data.buffering_time_ms, \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\
+                \", \"\"rendition_height\"\": $rec.Data.rendition_height, \"\"startup_latency_ms\"\
+                \": $rec.Data.startup_latency_ms, \"\"live_latency_ms\"\": $rec.Data.live_latency_ms,\
+                \ \")\n  #end\n  #if($rec.Data.metric_type == \"QUIZ_ANSWER\")\n \
+                \       #set($res = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\
+                \", \"\"question\"\": \"\"$rec.Data.question\"\", \"\"answer\"\":\
+                \ \"\"$rec.Data.answer\"\",\")\n  #end\n  #set($res = \"$res\"\"event_time\"\
+                \": $context.requestTimeEpoch\")\n  #set($res = \"$res}\")\n  #set($output\
+                \ = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\"}]}\"\
+                )\n#end\n$output\n"
             - Fn::Sub: "#set($data = $input.path('$'))\n#set($records = $input.path('$.Records'))\n\
                 #set($output = \"{ \"\"DeliveryStreamName\"\": \"\"${PlayerLogsDeliveryStream}\"\
-                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #set($res\
-                \ = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\
-                \": \"\"$rec.Data.client_platform\"\", \"\"channel_watched\"\": \"\
-                \"$rec.Data.channel_watched\"\", \"\"is_live\"\": $rec.Data.is_live,\
-                \ \"\"error_count\"\": $rec.Data.error_count, \"\"playing_time_ms\"\
-                \": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\": $rec.Data.buffering_time_ms,\
-                \ \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\", \"\"rendition_height\"\
-                \": $rec.Data.rendition_height, \"\"startup_latency_ms\"\": $rec.Data.startup_latency_ms,\
-                \ \"\"live_latency_ms\"\": $rec.Data.live_latency_ms, \")\n  #set($res\
-                \ = \"$res\"\"event_time\"\": $context.requestTimeEpoch\")\n  #set($res\
-                \ = \"$res}\")\n  #set($output = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\
-                \"}]}\")\n#end\n$output\n"
+                \", \"\"Records\"\": [{ \")\n#foreach($rec in $records)\n  #if($rec.Data.metric_type\
+                \ == \"PLAYBACK_SUMMARY\")\n      #set($res = \"{ \"\"metric_type\"\
+                \": \"\"$rec.Data.metric_type\"\", \"\"client_platform\"\": \"\"$rec.Data.client_platform\"\
+                \", \"\"channel_watched\"\": \"\"$rec.Data.channel_watched\"\", \"\
+                \"is_live\"\": $rec.Data.is_live, \"\"error_count\"\": $rec.Data.error_count,\
+                \ \"\"playing_time_ms\"\": $rec.Data.playing_time_ms, \"\"buffering_time_ms\"\
+                \": $rec.Data.buffering_time_ms, \"\"rendition_name\"\": \"\"$rec.Data.rendition_name\"\
+                \", \"\"rendition_height\"\": $rec.Data.rendition_height, \"\"startup_latency_ms\"\
+                \": $rec.Data.startup_latency_ms, \"\"live_latency_ms\"\": $rec.Data.live_latency_ms,\
+                \ \")\n  #end\n  #if($rec.Data.metric_type == \"QUIZ_ANSWER\")\n \
+                \       #set($res = \"{ \"\"metric_type\"\": \"\"$rec.Data.metric_type\"\
+                \", \"\"question\"\": \"\"$rec.Data.question\"\", \"\"answer\"\":\
+                \ \"\"$rec.Data.answer\"\",\")\n  #end\n  #set($res = \"$res\"\"event_time\"\
+                \": $context.requestTimeEpoch\")\n  #set($res = \"$res}\")\n  #set($output\
+                \ = \"$output \"\"Data\"\": \"\"$util.base64Encode($res)\"\"}]}\"\
+                )\n#end\n$output\n"
       ResourceId:
         Ref: EventIngestApiResource
       RestApiId:
