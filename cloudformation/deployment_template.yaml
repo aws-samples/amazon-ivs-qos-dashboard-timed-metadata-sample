@@ -572,7 +572,6 @@ Resources:
             Resource:
               - !Ref ElasticSearchDomainArn
               - !Sub "${ElasticSearchDomainArn}/*"
-              - "*"
           - Effect: Allow
             Action:
               - "es:ESHttpGet"
@@ -585,7 +584,6 @@ Resources:
               - !Sub "${ElasticSearchDomainArn}/_nodes/*/stats"
               - !Sub "${ElasticSearchDomainArn}/_stats"
               - !Sub "${ElasticSearchDomainArn}/index-name*/_stats"
-              - "*"
           - Effect: Allow
             Action:
               - "logs:PutLogEvents"
