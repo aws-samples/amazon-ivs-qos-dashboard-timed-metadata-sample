@@ -148,31 +148,6 @@ Resources:
           Bucket: !GetAtt PlayerLogsBucket.DomainName
           Prefix: 'access_logs/cloudfront/'
 
-  GlueRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "glue.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        -
-          PolicyName: "root"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: "Allow"
-                Action: "*"
-                Resource: "*"
-
 # Create an AWS Glue database
   GlueDatabase:
     Type: AWS::Glue::Database
