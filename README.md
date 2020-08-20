@@ -49,6 +49,19 @@ aws ivs get-channel --arn [channel ARN]
 
 Link to extended docs here
 
+
+## Sample QuickSight Dashboard
+
+![Solution Components](./images/popular_channels.png)
+
+![Solution Components](./images/popular_platforms.png)
+
+![Solution Components](./images/avg_buffer_time.png)
+
+![Solution Components](./images/avg_startup_latency.png)
+
+![Solution Components](./images/avg_live_latency.png)
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
