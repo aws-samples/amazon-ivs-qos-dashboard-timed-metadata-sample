@@ -52,7 +52,7 @@ Link to extended docs here
 
 ## Sample QuickSight Dashboard
 
-![Solution Components](./images/popular_channels.png)
+![Solution Components](./images/popular_channels.png | width=200)
 
 ![Solution Components](./images/popular_platforms.png)
 
