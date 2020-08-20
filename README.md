@@ -2,9 +2,13 @@
 
 This is a sample application for use measuring the performance and audience experience for streaming video delivered via Amazon Interactive Video Service.
 
-This application deploys an integration with the IVS player SDK to capture metrics from stream viewers capturing their experience over time.
+This application consists of an integration with the IVS player SDK to capture metrics from stream viewers. The metrics captured are used to report on viewer experience over time.
 
-Captured metrics are processed and presented as both CloudWatch metrics and archived in a Data Lake where they can be reported on via QuickSight or ElasticSearch.
+Captured metrics are delivered to AWS via API Gateway and Kinesis Firehose. Kinesis Firehose delivers the metrics to three destinations which can be used for exploration and to visualize the viewer experience
+
+* A Data Lake built on Amazon S3 and integrated with AWS Glue and Athena. Data stored in this location can be visualized using Amazon QuickSight.
+* Real time sliding window analysis is performed by Amazon Kinesis Analytics. Metrics calculated by this application are delivered to CloudWatch as metrics which can be used for operational dashboards and monitoring.
+* Optionally, metrics can also be delivered to an AWS ElasticSearch cluster for both near-real time and long-tail analysis using Kibana.
 
 ## High level solution components
 ![Solution Components](./docs/images/solution_components.png)
