@@ -148,31 +148,6 @@ Resources:
           Bucket: !GetAtt PlayerLogsBucket.DomainName
           Prefix: 'access_logs/cloudfront/'
 
-  GlueRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "glue.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        -
-          PolicyName: "root"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: "Allow"
-                Action: "*"
-                Resource: "*"
-
 # Create an AWS Glue database
   GlueDatabase:
     Type: AWS::Glue::Database
@@ -246,7 +221,6 @@ Resources:
       Path: /service-role/
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        - 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'
       Policies:
         - PolicyName: CustomPolicy
           PolicyDocument:
@@ -274,7 +248,6 @@ Resources:
           Principal:
             Service:
               - lambda.amazonaws.com
-              - s3.amazonaws.com
 
   DeployFunction:
     Type: 'AWS::Serverless::Function'
@@ -322,14 +295,13 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
         - PolicyName: 'QoS-Lambda-exec-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
-                Action: lambda:InvokeFunction
-                Resource: arn:aws:lambda:*:*:function:*
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -544,7 +516,7 @@ Resources:
             Action:
               - "logs:PutLogEvents"
             Resource:
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}"
       Roles:
         - !Ref DeliveryRole
 
@@ -599,7 +571,6 @@ Resources:
             Resource:
               - !Ref ElasticSearchDomainArn
               - !Sub "${ElasticSearchDomainArn}/*"
-              - "*"
           - Effect: Allow
             Action:
               - "es:ESHttpGet"
@@ -612,16 +583,16 @@ Resources:
               - !Sub "${ElasticSearchDomainArn}/_nodes/*/stats"
               - !Sub "${ElasticSearchDomainArn}/_stats"
               - !Sub "${ElasticSearchDomainArn}/index-name*/_stats"
-              - "*"
           - Effect: Allow
             Action:
               - "logs:PutLogEvents"
             Resource:
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
-              - "lambda:*"
+              - "lambda:InvokeFunction" 
+              - "lambda:GetFunctionConfiguration" 
             Resource:
               - !Sub "${RecordValidationFunction.Arn}*"
       Roles:
@@ -693,13 +664,22 @@ Resources:
             Action: "sts:AssumeRole"
       Path: "/"
       Policies:
-        - PolicyName: Open
+        - PolicyName: ReadFirehoseInvokeLambda
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: "*"
-                Resource: "*"
+                Action:
+                  - "firehose:DescribeDeliveryStream"
+                  - "firehose:Get*"
+                Resource: !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                  - "lambda:GetFunctionConfiguration"
+                Resource:
+                  - !GetAtt PlayerSummaryCWFunction.Arn
+                  - !GetAtt QuizSummaryCWFunction.Arn
 
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
