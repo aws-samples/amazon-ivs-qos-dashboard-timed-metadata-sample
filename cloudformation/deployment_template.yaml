@@ -516,7 +516,7 @@ Resources:
             Action:
               - "logs:PutLogEvents"
             Resource:
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}"
       Roles:
         - !Ref DeliveryRole
 
@@ -587,8 +587,8 @@ Resources:
             Action:
               - "logs:PutLogEvents"
             Resource:
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}"
-              - !Sub "${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}"
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
               - "lambda:*"
