@@ -7,10 +7,10 @@ This application deploys an integration with the IVS player SDK to capture metri
 Captured metrics are processed and presented as both CloudWatch metrics and archived in a Data Lake where they can be reported on via QuickSight or ElasticSearch.
 
 ## High level solution components
-![Solution Components](./images/solution_components.png)
+![Solution Components](./docs/images/solution_components.png)
 
 ## Backend Architecture
-![Backend Architecture](./images/architecture.png)
+![Backend Architecture](./docs/images/architecture.png)
 
 ## Build Pre-requisites
 
@@ -52,15 +52,15 @@ Link to extended docs here
 
 ## Sample QuickSight Dashboard
 
-![Solution Components](./images/popular_channels.png)
+![Solution Components](./docs/images/popular_channels.png)
 
-![Solution Components](./images/popular_platforms.png)
+![Solution Components](./docs/images/popular_platforms.png)
 
-![Solution Components](./images/avg_buffer_time.png)
+![Solution Components](./docs/images/avg_buffer_time.png)
 
-![Solution Components](./images/avg_startup_latency.png)
+![Solution Components](./docs/images/avg_startup_latency.png)
 
-![Solution Components](./images/avg_live_latency.png)
+![Solution Components](./docs/images/avg_live_latency.png)
 
 ## Security
 
