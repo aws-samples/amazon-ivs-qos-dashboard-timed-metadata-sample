@@ -6,12 +6,10 @@ This application deploys an integration with the IVS player SDK to capture metri
 
 Captured metrics are processed and presented as both CloudWatch metrics and archived in a Data Lake where they can be reported on via QuickSight or ElasticSearch.
 
-## Architecture
-
-High level solution components
+## High level solution components
 ![Solution Components](./images/solution_components.png)
 
-Backend Architecture
+## Backend Architecture
 ![Backend Architecture](./images/architecture.png)
 
 ## Build Pre-requisites
