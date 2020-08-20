@@ -1,14 +1,18 @@
 ## Amazon IVS Quality of Service Dashboard Sample
 
-This is a sample application for use measuring the performance and audience experience for streaming video delivered via Amazon Interactive Video Service. 
+This is a sample application for use measuring the performance and audience experience for streaming video delivered via Amazon Interactive Video Service.
 
-This application deploys an integration with the IVS player SDK to capture metrics from stream viewers capturing their experience over time. 
+This application deploys an integration with the IVS player SDK to capture metrics from stream viewers capturing their experience over time.
 
-Captured metrics are processed and presented as both CloudWatch metrics and archived in a Data Lake where they can be reported on via QuickSight or ElasticSearch. 
+Captured metrics are processed and presented as both CloudWatch metrics and archived in a Data Lake where they can be reported on via QuickSight or ElasticSearch.
 
 ## Architecture
 
-include architecture diagram
+High level solution components
+![Solution Components](./images/solution_components.png)
+
+Backend Architecture
+![Backend Architecture](./images/architecture.png)
 
 ## Build Pre-requisites
 
@@ -36,8 +40,8 @@ aws ivs get-channel --arn [channel ARN]
 
 3. Deploy the cloudformation template either from the S3 bucket the template is uploaded to during the build process, or from folder: cloudformation/deployment.yaml
 4. When prompted for the LIVEURL Parameter at step 2, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel.
-5. Once the CloudFormation template is deployed, navigate to the Amazon Kinesis Management Console. 
-6. From the menu on the left, select Analytics Applications. 
+5. Once the CloudFormation template is deployed, navigate to the Amazon Kinesis Management Console.
+6. From the menu on the left, select Analytics Applications.
 7. Locate the Kinesis Analytics application deployed by the stack (it will be prefixed with the Stack Name). Select this and from the Actions drop down menu, click on "Start Application"
 8. From the CloudFormation Output menu, open the URL listed
 9. Start streaming to your IVS stream
@@ -54,4 +58,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
-
