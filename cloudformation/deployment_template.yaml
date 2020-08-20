@@ -591,7 +591,8 @@ Resources:
               - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
-              - "lambda:*"
+              - "lambda:InvokeFunction" 
+              - "lambda:GetFunctionConfiguration" 
             Resource:
               - !Sub "${RecordValidationFunction.Arn}*"
       Roles:
