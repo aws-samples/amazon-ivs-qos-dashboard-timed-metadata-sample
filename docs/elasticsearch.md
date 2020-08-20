@@ -30,7 +30,7 @@ In order to configure ElasticSearch to accept logs from the Kinesis Firehose str
   ],
   "index_permissions": [{
     "index_patterns": [
-      "firehose-index*"
+      "*"
     ],
     "allowed_actions": [
       "create_index",
@@ -39,6 +39,7 @@ In order to configure ElasticSearch to accept logs from the Kinesis Firehose str
     ]
   }]
 }
+1. Note, you can set the value under index_patterns to the prefix of the index you have set when deploying the CloudFormation template for the solution. 
 1. Save the changes
 
 Next map the Kinesis Firehose IAM Role to this new ElasticSearch policy:
