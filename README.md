@@ -10,6 +10,32 @@ Captured metrics are delivered to AWS via API Gateway and Kinesis Firehose. Kine
 * Real time sliding window analysis is performed by Amazon Kinesis Analytics. Metrics calculated by this application are delivered to CloudWatch as metrics which can be used for operational dashboards and monitoring.
 * Optionally, metrics can also be delivered to an AWS ElasticSearch cluster for both near-real time and long-tail analysis using Kibana.
 
+## Deployment
+
+1. The demo deployment included with the solution is configured to use a publicly available IVS test stream. If you wish to use your own stream in the demo, review the IVS Getting Started guide and create a channel: https://docs.aws.amazon.com/ivs/latest/userguide/GSIVS.html
+2. Once the channel is created, note the Playback URL. You can retrieve this via the AWS CLI with the command:
+
+aws ivs get-channel --arn [channel ARN]
+
+3. Deploy the cloudformation template either from one of the links below, or from folder: cloudformation/deployment.yaml if you build the solution in your local dev environment (see below for build instructions)
+4. When prompted for the PlaybackURL Parameter at step 2 of the CloudFormation Stack Deployment, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel, or leave this at the default value.
+5. Once the CloudFormation template is deployed, navigate to the Output tab in CloudFormation as several settings are emitted here. You can open the demo app by clicking on the PlayerURL link.
+
+## Post Deployment
+
+### Enabling CloudWatch Dashboards
+
+1. To enable a CloudWatch dashboard, a pre-deployed Kinesis Analytics application needs to be turned on. To do so, navigate to the Amazon Kinesis Management Console.
+6. From the menu on the left, select Analytics Applications.
+7. Locate the Kinesis Analytics application deployed by the stack (it will be prefixed with the Stack Name). Select this and click on "Run"
+8. From the CloudFormation Output tab for the deployed stack, open the URL listed for the PlayerCWDashboard. This will take you to the CloudWatch Dashboard
+9. Start streaming to your IVS stream and open the demo app. The URL for the demo app is output as PlayerURL by the CloudFormation stack.
+10. Metrics will be captured and will be visible under CloudWatch within a few minutes
+
+### Enabling ElasticSearch
+
+1. To configure delivery of metrics to ElasticSearch, please see the [ElasticSearch Guide](./docs/elasticsearch.md)
+
 ## Launching solution with Pre-built AWS CloudFormation Template
 
 The solution is deployed using an AWS CloudFormation template with AWS Lambda backed custom resources. To deploy the solution, use one of the following CloudFormation templates and follows the instructions.
@@ -42,27 +68,6 @@ Building this project requires the following dependencies to be installed on you
 make creates3
 4. To build the artifacts and Cloudformation template to deploy the solution, run the command:
 make all
-
-## Deployment
-
-1. Prior to deploying the demo application, review the IVS Getting Started guide and create a channel: https://docs.aws.amazon.com/ivs/latest/userguide/GSIVS.html
-2. Once the channel is created, note the Playback URL. You can retrieve this via the AWS CLI with the command:
-
-aws ivs get-channel --arn [channel ARN]
-
-3. Deploy the cloudformation template either from the S3 bucket the template is uploaded to during the build process, or from folder: cloudformation/deployment.yaml
-4. When prompted for the LIVEURL Parameter at step 2, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel.
-5. Once the CloudFormation template is deployed, navigate to the Amazon Kinesis Management Console.
-6. From the menu on the left, select Analytics Applications.
-7. Locate the Kinesis Analytics application deployed by the stack (it will be prefixed with the Stack Name). Select this and from the Actions drop down menu, click on "Start Application"
-8. From the CloudFormation Output menu, open the URL listed
-9. Start streaming to your IVS stream
-10. Metrics will be captured and will be visible under CloudWatch
-
-## Working with the sample application
-
-Link to extended docs here
-
 
 ## Sample QuickSight Dashboard
 
