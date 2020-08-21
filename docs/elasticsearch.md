@@ -23,7 +23,7 @@ In order to configure ElasticSearch to accept logs from the Kinesis Firehose str
 1. Create a new Role named 'firehose'
 1. Grant the following permissions:
 
-{
+``{
   "cluster_permissions": [
     "cluster_composite_ops",
     "cluster_monitor"
@@ -38,8 +38,13 @@ In order to configure ElasticSearch to accept logs from the Kinesis Firehose str
       "crud"
     ]
   }]
-}
+}``
 1. Note, you can set the value under index_patterns to the prefix of the index you have set when deploying the CloudFormation template for the solution. 
+
+![Cluster Permissions](./images/es-cluster-permissions.png)
+![Index Permissions](./images/es-index-permissions.png)
+
+
 1. Save the changes
 
 Next map the Kinesis Firehose IAM Role to this new ElasticSearch policy:
@@ -48,6 +53,7 @@ Next map the Kinesis Firehose IAM Role to this new ElasticSearch policy:
 1. Click the '+' to add a new Role Mapping
 1. Select the 'firehose' role from the dropdown menu
 1. Under Backend Roles, add the ARN of the Role assigned to Kinesis Firehose which is listed in the CloudFormation Stack output under the value "DeliveryRoleArn" once the template deploys successfully
+![Cluster Permissions](./images/es-role-mapping.png)
 1. Save the changes
 
 Now Kinesis Firehose can post to your ES cluster. 
