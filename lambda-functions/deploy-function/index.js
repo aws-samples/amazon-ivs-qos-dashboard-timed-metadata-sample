@@ -1,3 +1,21 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+// Helper function handles the Demo UI deployment into the Source S3 bucket
+// Also sets the necessary APIGW endpoint configurations for the player to start pushing the metrics
 'use strict';
 
 const AWS = require("aws-sdk");
@@ -48,48 +66,42 @@ exports.handler = function(event, context) {
  }
 };
 
-//upload the UI assets. Also modifies the 'js/services/configService.js' file to
-//configure the deployment specific resources
+// upload the UI assets. Also modifies the 'js/services/configService.js' file to
+// configure the deployment specific resources
 // - BUCKET_URL : the S3 bucket where the redirector.json and User interface is deployed.
 function uploadUIAssets(event) {
  console.log("In uploadUIAssets :%s", SourceUIFilePath);
-
+ // get the zip file containing the Demo UI
  return S3.getObject({ Bucket: SourceFileBucket, Key: SourceUIFilePath }).promise()
   .then(data => {
    let zip = new AdmZip(data.Body);
    let zipEntries = zip.getEntries();
 
+   // extract the zip contents in the S3 bucket
    zipEntries.forEach(function(zipEntry) {
 
     if (!zipEntry.isDirectory) {
      let mimeType = mime.getType(zipEntry.name.substring(zipEntry.name.lastIndexOf(".")));
      let fileContents = zipEntry.getData();
-     // console.log('File Name: ', zipEntry.entryName);
 
      if ((zipEntry.entryName.includes("js/config.js"))) {
-      // console.log("Kinesis Stream name :%s",event.ResourceProperties.KinesisStreamName);
-
-      fileContents = fileContents.toString().replace('DELIVERY_STREAM_NAME', event.ResourceProperties.DeliveryStreamName);
+      //replace the placeholder with values from the current deployment
+      // fileContents = fileContents.toString().replace('DELIVERY_STREAM_NAME', event.ResourceProperties.DeliveryStreamName);
       fileContents = fileContents.replace('PLAYER_SUMMARY_ENDPOINT', event.ResourceProperties.PlayerSummaryEndpoint);
       fileContents = fileContents.replace('ANSWER_SUMMARY_ENDPOINT', event.ResourceProperties.AnswerSummaryEndpoint);
       fileContents = fileContents.replace('PLAYBACK_URL', Playback_URL);
      }
 
      S3.putObject({
-       // ACL: 'public-read',
        Body: fileContents,
        Bucket: SourceBucket,
        Key: UIPrefix + "/" + zipEntry.entryName,
-       // Key: zipEntry.entryName,
        ContentType: mimeType
       }).promise()
       .catch(() => { console.log("Exception while uploading the file into S3 bucket") });
     }
    });
    console.log("Done uploading UI");
-   // return new Promise((resolve, reject) => { // (*)
-   //  resolve('Done uploading UI');
-   // });
   });
 }
 
@@ -125,14 +137,10 @@ function sendResponse(event, context, responseStatus, responseData) {
  let request = https.request(options, function(response) {
   console.log("STATUS: " + response.statusCode);
   console.log("HEADERS: " + JSON.stringify(response.headers));
-  // Tell AWS Lambda that the function execution is done
-  // context.done();
  });
 
  request.on("error", function(error) {
   console.log("sendResponse Error:" + error);
-  // Tell AWS Lambda that the function execution is done
-  // context.done();
  });
 
  // write data to request body

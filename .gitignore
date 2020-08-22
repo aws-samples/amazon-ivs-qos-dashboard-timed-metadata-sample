@@ -1,9 +1,11 @@
+# Makefile variations
 Makefile_dev
 Makefile_prod
 Makefile
 
 # build artifacts
 node_modules/
+dist/
 dist/*.zip
 cloudformation/deployment.yaml
 cloudformation/deployment_package.yaml

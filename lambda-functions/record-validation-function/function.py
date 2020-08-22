@@ -1,3 +1,19 @@
+"""
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 from __future__ import print_function
 
 import base64
@@ -13,31 +29,13 @@ bucket_name = os.environ['BUCKET_VALIDATION_DEFS']
 file_name = os.environ['BUCKET_VALIDATION_FILE']
 
 def get_validation_schema():
-    # schema = {
-    #     "type": "object",
-    #     "properties": {
-    #         "metric_type": {"type": "string"},
-    #         "error_count": {"type": "number"},
-    #         "playing_time_ms": {"type": "number"},
-    #         "is_live": {"type": "boolean"},
-    #         "client_platform": {"type": "string"},
-    #         "channel_watched": {"type": "string"},
-    #         "buffering_time_ms": {"type": "integer"},
-    #         "rendition_name": {"type": "string"},
-    #         "rendition_height": {"type": "integer"},
-    #         "startup_latency_ms": {"type": "integer"},
-    #         "live_latency_ms": {"type": "integer"},
-    #         "event_time": {"type": "integer"}
-    #     },
-    #     "required": ["metric_type","event_time"]
-    # }
     f = open('payload_validation.json',)
     return json.load(f)
-    # return json.loads(json.dumps(schema))
 
 def handler(event, context):
 
     output = []
+    # fetch the json payload schema to validate the data against
     schema = get_validation_schema()
     print('Schema {}'.format(schema))
     for record in event['records']:
@@ -58,6 +56,7 @@ def handler(event, context):
         except Exception as e:
             print("Record invalid {}".format(jsonData))
             print(e)
+            # record is not valid format and will be stored in the 'processingfailed' prefix in S3 bucket
             output_record = {
                 'recordId': record['recordId'],
                 'result': 'ProcessingFailed',
