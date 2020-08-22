@@ -1,13 +1,13 @@
 'use strict';
+// Helper function handles the interaction between Kinesis Data Analytics to CloudWatch dashboard metrics
+// for Question/Answer type of interaction
 
 const AWS = require('aws-sdk');
 let region = process.env.AWS_REGION;
 // Create CloudWatch service object
 var cw = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 
-var creds = new AWS.EnvironmentCredentials('AWS');
-const auth = "Basic " + new Buffer('admin' + ":" + 'Admin@123').toString("base64");
-
+// CloudWatch dashboard Namespace prefix to push the metrics to
 const DASHBOARD_NAME = process.env.DASHBOARD_NAME;
 
 console.log('Loading function');
@@ -28,18 +28,16 @@ exports.handler = (event, context, callback) => {
         // Create parameters JSON for putMetricData
         var params = {
             MetricData: [{
+                // the question being asked
                 MetricName: jsonData.QUESTION.trim(),
                 Dimensions: [
-                //     {
-                //     Name: 'ChannelName',
-                //     Value: jsonData.CHANNEL_WATCHED,
-                // },
                 {
                     Name: 'Answer',
+                    // the selected answer
                     Value: jsonData.ANSWER.trim()
                 } ],
-                // 'Timestamp': new Date().toISOString(),
                 Unit: 'Count',
+                // the aggregated number of the selected answer
                 Value: jsonData.SUMMARY
             }, ],
             Namespace: DASHBOARD_NAME+'/QuizSummary'

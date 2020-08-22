@@ -1,13 +1,33 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 const AWS = require('aws-sdk');
 
 const athena = new AWS.Athena({
   version: '2017-05-18',
 });
 
+// S3 bucket to hold the Athena search results
 const ATHENA_RESULT_BUCKET = process.env.ATHENA_RESULT_BUCKET;
+// location of the player logs
 const PLAYER_LOGS_BUCKET = process.env.PLAYER_LOGS_BUCKET;
+// Glue table name
 const PLAYER_LOGS_TABLE = process.env.PLAYER_LOGS_TABLE;
-const ETL_PLAYER_LOGS_TABLE = process.env.ETL_PLAYER_LOGS_TABLE;
 
 exports.handler = async (event, context) => {
 
@@ -29,9 +49,10 @@ exports.handler = async (event, context) => {
 
   //create the hourly partition
   await createPlayerLogsPartition(year,month,day,hour);
-  // await createETLJobPartition();
 };
 
+// function creates partitions in the Glue table definition based on the year/month/day/hour prefix structure in S3
+// which is the format in which data is pushed from Kinesis Firehose
 async function createPlayerLogsPartition(year, month, day, hour) {
 
   let {
@@ -68,39 +89,6 @@ async function createPlayerLogsPartition(year, month, day, hour) {
     }
   }
 }
-
-// async function createETLJobPartition() {
-//
-//   let {
-//     QueryExecutionId
-//   } = await runQuery({
-//     QueryString: `MSCK REPAIR TABLE ${ETL_PLAYER_LOGS_TABLE}`,
-//   });
-//   for (let attempt = 0; attempt < 10; attempt++) {
-//     let result = await getQueryExecution(QueryExecutionId);
-//     let state = result.QueryExecution.Status.State;
-//     console.log("CDNLogs.Execution status ",state);
-//     switch (state) {
-//       case 'RUNNING':
-//       case 'QUEUED':
-//         console.log(
-//           'query is queued or running, retrying in ',
-//           Math.pow(2, attempt + 1) * 100,
-//           'ms',
-//         );
-//         await delay(Math.pow(2, attempt + 1) * 100);
-//         break;
-//       case 'SUCCEEDED':
-//         return true;
-//       case 'FAILED':
-//         console.log('query failed');
-//         throw new Error(result.QueryExecution.Status.StateChangeReason);
-//       case 'CANCELLED':
-//         console.log('query is cancelled');
-//         return;
-//     }
-//   }
-// }
 
 async function runQuery({ QueryString, UniqueRequestId }) {
   console.log('running query', QueryString);
