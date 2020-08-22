@@ -1,7 +1,5 @@
-/*
+"""
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * SPDX-License-Identifier: MIT-0
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this
  * software and associated documentation files (the "Software"), to deal in the Software
  * without restriction, including without limitation the rights to use, copy, modify,
@@ -14,7 +12,7 @@
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+"""
 
 from __future__ import print_function
 
@@ -37,7 +35,7 @@ def get_validation_schema():
 def handler(event, context):
 
     output = []
-    // fetch the json payload schema to validate the data against
+    # fetch the json payload schema to validate the data against
     schema = get_validation_schema()
     print('Schema {}'.format(schema))
     for record in event['records']:
@@ -58,7 +56,7 @@ def handler(event, context):
         except Exception as e:
             print("Record invalid {}".format(jsonData))
             print(e)
-            // record is not valid format and will be stored in the 'processingfailed' prefix in S3 bucket
+            # record is not valid format and will be stored in the 'processingfailed' prefix in S3 bucket
             output_record = {
                 'recordId': record['recordId'],
                 'result': 'ProcessingFailed',

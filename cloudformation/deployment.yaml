@@ -1,18 +1,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: QoS - Player with event capture, ingest and processing implementation
+Description: IVS QoS Dashboard Backend - Includes sample player with event capture,
+  ingest and processing implementation
 Mappings:
   SourceCodeBucket:
     General:
       S3Bucket: ganeshji-sfqos
-      LambdaUIDeploymentCodePrefix: qos/ivsqosv5/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/ivsqosv5/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/ivsqosv5/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/ivsqosv5/lambda-functions/add-partition-function
+      LambdaUIDeploymentCodePrefix: qos/ivsqosv6/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/ivsqosv6/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/ivsqosv6/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/ivsqosv6/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
-  LiveURL:
+  PlaybackURL:
+    Description: The IVS Playback URL that will be used in the Demo UI. Default value
+      is a public test stream including Quiz timed-metadata integration.
     Type: String
+    Default: https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
   DeployDemoUI:
     Type: String
     Description: Deploy the demo user interface for testing
@@ -38,13 +42,13 @@ Parameters:
   ElasticSearchIndexRotation:
     Type: String
     Description: Index Rotation Interval
-    Default: None
+    Default: NoRotation
     AllowedValues:
-    - None
-    - Hour
-    - Day
-    - Week
-    - Month
+    - NoRotation
+    - OneHour
+    - OneDay
+    - OneWeek
+    - OneMonth
 Conditions:
   DeployDemoUICondition:
     Fn::Equals:
@@ -154,27 +158,6 @@ Resources:
             - PlayerLogsBucket
             - DomainName
           Prefix: access_logs/cloudfront/
-  GlueRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - glue.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-      - PolicyName: root
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: '*'
-            Resource: '*'
   GlueDatabase:
     Type: AWS::Glue::Database
     Properties:
@@ -253,7 +236,6 @@ Resources:
       Path: /service-role/
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
       Policies:
       - PolicyName: CustomPolicy
         PolicyDocument:
@@ -294,12 +276,11 @@ Resources:
           Principal:
             Service:
             - lambda.amazonaws.com
-            - s3.amazonaws.com
   DeployFunction:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/ef5b347d458c78d29e5ec229df36b895
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/1fa7994692ed547ab7b7db52f90151bb
       MemorySize: 512
       Environment:
         Variables:
@@ -327,11 +308,11 @@ Resources:
               - player-ui.zip
           UIPrefix: ui
           PlayerSummaryEndpoint:
-            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
           AnswerSummaryEndpoint:
-            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
-          LIVE_URL:
-            Ref: LiveURL
+            Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
+          Playback_URL:
+            Ref: PlaybackURL
       Handler: index.handler
       Role:
         Fn::GetAtt:
@@ -351,9 +332,9 @@ Resources:
         - Ref: PlayerLogsESDeliveryStream
         - Ref: PlayerLogsDeliveryStream
       PlayerSummaryEndpoint:
-        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
       AnswerSummaryEndpoint:
-        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+        Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
       Region:
         Fn::Sub: ${AWS::Region}
       CloudFrontDomain:
@@ -375,14 +356,13 @@ Resources:
           Principal:
             Service: lambda.amazonaws.com
           Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
       - PolicyName: QoS-Lambda-exec-policy
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
-          - Effect: Allow
-            Action: lambda:InvokeFunction
-            Resource: arn:aws:lambda:*:*:function:*
           - Effect: Allow
             Action:
             - logs:CreateLogGroup
@@ -398,7 +378,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/6b8e58cf32b62059b2e8aa59e6f55f30
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/0a20beb25b33acba7a1ad9c43632d965
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -415,7 +395,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/9d133e40897efa8fd845e35188d6b286
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/5360d288a806afd678c18f1166f75d05
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -431,7 +411,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/30854dd6eefa59366d0937ae78fd35a4
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/ccbf2bd01cbdc9480590a747202664a7
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -508,7 +488,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/7a3b48a533fea7ae9d5120b3d1c8f218
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/771146d94949386d38e4292b9a23a7e0
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -616,7 +596,7 @@ Resources:
           Action:
           - logs:PutLogEvents
           Resource:
-          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}
+          - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}
       Roles:
       - Ref: DeliveryRole
   PlayerLogsDeliveryStream:
@@ -676,7 +656,6 @@ Resources:
           Resource:
           - Ref: ElasticSearchDomainArn
           - Fn::Sub: ${ElasticSearchDomainArn}/*
-          - '*'
         - Effect: Allow
           Action:
           - es:ESHttpGet
@@ -689,16 +668,16 @@ Resources:
           - Fn::Sub: ${ElasticSearchDomainArn}/_nodes/*/stats
           - Fn::Sub: ${ElasticSearchDomainArn}/_stats
           - Fn::Sub: ${ElasticSearchDomainArn}/index-name*/_stats
-          - '*'
         - Effect: Allow
           Action:
           - logs:PutLogEvents
           Resource:
-          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseLogStream}
-          - Fn::Sub: ${KinesisFirehoseLogGroup.Arn}/${KinesisFirehoseESLogStream}
+          - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseLogStream}
+          - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseESLogStream}
         - Effect: Allow
           Action:
-          - lambda:*
+          - lambda:InvokeFunction
+          - lambda:GetFunctionConfiguration
           Resource:
           - Fn::Sub: ${RecordValidationFunction.Arn}*
       Roles:
@@ -734,16 +713,16 @@ Resources:
           - Type: Lambda
             Parameters:
             - ParameterName: BufferSizeInMBs
-              ParameterValue: 3
+              ParameterValue: '3'
             - ParameterName: LambdaArn
               ParameterValue:
                 Fn::GetAtt:
                 - RecordValidationFunction
                 - Arn
             - ParameterName: NumberOfRetries
-              ParameterValue: 1
+              ParameterValue: '1'
             - ParameterName: BufferIntervalInSeconds
-              ParameterValue: 60
+              ParameterValue: '60'
             - ParameterName: RoleArn
               ParameterValue:
                 Fn::GetAtt:
@@ -786,13 +765,34 @@ Resources:
           Action: sts:AssumeRole
       Path: /
       Policies:
-      - PolicyName: Open
+      - PolicyName: ReadFirehoseInvokeLambda
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
           - Effect: Allow
-            Action: '*'
-            Resource: '*'
+            Action:
+            - firehose:DescribeDeliveryStream
+            - firehose:Get*
+            Resource:
+              Fn::If:
+              - PushToElasticSearchCondition
+              - Fn::GetAtt:
+                - PlayerLogsESDeliveryStream
+                - Arn
+              - Fn::GetAtt:
+                - PlayerLogsDeliveryStream
+                - Arn
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            - lambda:GetFunctionConfiguration
+            Resource:
+            - Fn::GetAtt:
+              - PlayerSummaryCWFunction
+              - Arn
+            - Fn::GetAtt:
+              - QuizSummaryCWFunction
+              - Arn
   RealtimeAnalytics:
     Type: AWS::KinesisAnalytics::Application
     Properties:
@@ -956,7 +956,7 @@ Resources:
     Properties:
       RestApiId:
         Ref: EventIngestApi
-      StageName: prod2
+      StageName: prod
   EventIngestApiPOST:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -1086,7 +1086,7 @@ Resources:
     Type: AWS::CloudWatch::Dashboard
     Properties:
       DashboardName:
-        Fn::Sub: ${AWS::StackName}-QoS-PlayerSummaryDashboard-v1
+        Fn::Sub: ${AWS::StackName}-QoS-PlayerSummaryDashboard
       DashboardBody:
         Fn::Sub: '{"widgets":[{"type":"metric","x":9,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","BUFFER_RATIO","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"p95","period":60,"start":"-PT1H","end":"P0D","title":"Buffer
           Ratio - p95"}},{"type":"metric","x":0,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","CONCURRENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"Average","period":60,"start":"-PT1H","end":"P0D","title":"Concurrent
@@ -1112,19 +1112,19 @@ Outputs:
           Ref: RealtimeAnalytics
   sendQoSEventUrl:
     Value:
-      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
   sendQuizEventUrl:
     Value:
-      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod2/streams
+      Fn::Sub: https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
   DeliveryStreamName:
     Value:
       Fn::If:
       - PushToElasticSearchCondition
       - Ref: PlayerLogsESDeliveryStream
       - Ref: PlayerLogsDeliveryStream
-  LiveURL:
+  PlaybackURL:
     Value:
-      Ref: LiveURL
+      Ref: PlaybackURL
   DeliveryRoleArn:
     Value:
       Fn::GetAtt:
