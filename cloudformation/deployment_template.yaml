@@ -852,27 +852,30 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
             ResponseTemplates: {"application/json": "{ }"}
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json: !Sub |
+          application/json: !Sub
+          - |
             #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms"])
-            ## ,buffering_time_ms,rendition_height,startup_latency_ms,live_latency_ms")
-            ## $non_string_attrs.size()
-            ## $non_string_attrs.contains("is_live")
+            ## read the Data element
             #set($inputjson = $input.path('$..Data'))
-            #set($count = $inputjson.size())
-            #set($output = "{ ""DeliveryStreamName"": ""!If[PushToElasticSearchCondition,PlayerLogsESDeliveryStream,PlayerLogsDeliveryStream]"", ""Records"": [ ")
+            ## set the Delivery Stream Kinesis Firehose stream name
+            #set($output = "{ ""DeliveryStreamName"": ""${DeliveryStreamName}"", ""Records"": [ ")
+            ## for each payload event do the following
             #foreach($elem in $inputjson)
               #set($event = "{")
+              ## read the attributes of the json object dynamically
               #foreach($attr in $elem.keySet())
-                  ## $non_string_attrs.contains($attr)
-                  if($non_string_attrs.contains($attr))
+                  ## check if this is string type attr or not. Accordingly use "" around values
+                  #if($non_string_attrs.contains($attr))
                     #set($prop = """$attr"":$elem.get($attr),")
                   #else
                     #set($prop = """$attr"":""$elem.get($attr)"",")
                   #end
                   #set($event = "$event$prop")
               #end
+              ## set the timestamp of event to be the time at which the APIGW received the event
               #set($event = "$event""event_time"":$context.requestTimeEpoch")
               #set($event = "$event}")
+              ## encode to base64 for delivery
               #set($payload = "{""Data"":""$util.base64Encode($event)""}")
               #set($output = "$output$payload")
               #if($foreach.hasNext)
@@ -881,6 +884,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               #end
               #set($output = "$output]}")
               $output
+          - {DeliveryStreamName: !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
