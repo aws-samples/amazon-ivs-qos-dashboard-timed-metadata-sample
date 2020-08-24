@@ -593,8 +593,8 @@ Resources:
               - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${KinesisFirehoseLogGroup}:log-stream:${KinesisFirehoseESLogStream}"
           - Effect: Allow
             Action:
-              - "lambda:InvokeFunction" 
-              - "lambda:GetFunctionConfiguration" 
+              - "lambda:InvokeFunction"
+              - "lambda:GetFunctionConfiguration"
             Resource:
               - !Sub "${RecordValidationFunction.Arn}*"
       Roles:
@@ -852,41 +852,35 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
             ResponseTemplates: {"application/json": "{ }"}
         PassthroughBehavior: WHEN_NO_TEMPLATES
         RequestTemplates:
-          application/json:
-            !If
-              - PushToElasticSearchCondition
-              - !Sub |
-                #set($data = $input.path('$'))
-                #set($records = $input.path('$.Records'))
-                #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsESDeliveryStream}"", ""Records"": [{ ")
-                #foreach($rec in $records)
-                  #if($rec.Data.metric_type == "PLAYBACK_SUMMARY")
-                      #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
+          application/json: !Sub |
+            #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms"])
+            ## ,buffering_time_ms,rendition_height,startup_latency_ms,live_latency_ms")
+            ## $non_string_attrs.size()
+            ## $non_string_attrs.contains("is_live")
+            #set($inputjson = $input.path('$..Data'))
+            #set($count = $inputjson.size())
+            #set($output = "{ ""DeliveryStreamName"": ""!If[PushToElasticSearchCondition,PlayerLogsESDeliveryStream,PlayerLogsDeliveryStream]"", ""Records"": [ ")
+            #foreach($elem in $inputjson)
+              #set($event = "{")
+              #foreach($attr in $elem.keySet())
+                  ## $non_string_attrs.contains($attr)
+                  if($non_string_attrs.contains($attr))
+                    #set($prop = """$attr"":$elem.get($attr),")
+                  #else
+                    #set($prop = """$attr"":""$elem.get($attr)"",")
                   #end
-                  #if($rec.Data.metric_type == "QUIZ_ANSWER")
-                        #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""question"": ""$rec.Data.question"", ""answer"": ""$rec.Data.answer"",")
-                  #end
-                  #set($res = "$res""event_time"": $context.requestTimeEpoch")
-                  #set($res = "$res}")
-                  #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
-                #end
-                $output
-              - !Sub |
-                #set($data = $input.path('$'))
-                #set($records = $input.path('$.Records'))
-                #set($output = "{ ""DeliveryStreamName"": ""${PlayerLogsDeliveryStream}"", ""Records"": [{ ")
-                #foreach($rec in $records)
-                  #if($rec.Data.metric_type == "PLAYBACK_SUMMARY")
-                      #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""client_platform"": ""$rec.Data.client_platform"", ""channel_watched"": ""$rec.Data.channel_watched"", ""is_live"": $rec.Data.is_live, ""error_count"": $rec.Data.error_count, ""playing_time_ms"": $rec.Data.playing_time_ms, ""buffering_time_ms"": $rec.Data.buffering_time_ms, ""rendition_name"": ""$rec.Data.rendition_name"", ""rendition_height"": $rec.Data.rendition_height, ""startup_latency_ms"": $rec.Data.startup_latency_ms, ""live_latency_ms"": $rec.Data.live_latency_ms, ")
-                  #end
-                  #if($rec.Data.metric_type == "QUIZ_ANSWER")
-                        #set($res = "{ ""metric_type"": ""$rec.Data.metric_type"", ""question"": ""$rec.Data.question"", ""answer"": ""$rec.Data.answer"",")
-                  #end
-                  #set($res = "$res""event_time"": $context.requestTimeEpoch")
-                  #set($res = "$res}")
-                  #set($output = "$output ""Data"": ""$util.base64Encode($res)""}]}")
-                #end
-                $output
+                  #set($event = "$event$prop")
+              #end
+              #set($event = "$event""event_time"":$context.requestTimeEpoch")
+              #set($event = "$event}")
+              #set($payload = "{""Data"":""$util.base64Encode($event)""}")
+              #set($output = "$output$payload")
+              #if($foreach.hasNext)
+                  #set($output = "$output,")
+              #end
+              #end
+              #set($output = "$output]}")
+              $output
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
