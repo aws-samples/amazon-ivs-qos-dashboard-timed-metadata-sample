@@ -83,10 +83,10 @@ function uploadUIAssets(event) {
     if (!zipEntry.isDirectory) {
      let mimeType = mime.getType(zipEntry.name.substring(zipEntry.name.lastIndexOf(".")));
      let fileContents = zipEntry.getData();
-
      if ((zipEntry.entryName.includes("js/config.js"))) {
       //replace the placeholder with values from the current deployment
       // fileContents = fileContents.toString().replace('DELIVERY_STREAM_NAME', event.ResourceProperties.DeliveryStreamName);
+      fileContents = fileContents.toString();
       fileContents = fileContents.replace('PLAYER_SUMMARY_ENDPOINT', event.ResourceProperties.PlayerSummaryEndpoint);
       fileContents = fileContents.replace('ANSWER_SUMMARY_ENDPOINT', event.ResourceProperties.AnswerSummaryEndpoint);
       fileContents = fileContents.replace('PLAYBACK_URL', Playback_URL);
