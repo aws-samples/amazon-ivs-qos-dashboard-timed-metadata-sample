@@ -1,6 +1,7 @@
 # Makefile variations
 Makefile_dev
 Makefile_prod
+Makefile_public
 Makefile
 
 # build artifacts
