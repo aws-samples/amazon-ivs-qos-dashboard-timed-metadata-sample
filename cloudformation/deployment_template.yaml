@@ -831,15 +831,15 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
       - EventIngestApiOPTIONS
     Properties:
       RestApiId: !Ref EventIngestApi
-      StageName: prod
 
-  # EventIngestApiStage:
-  #   Type: AWS::ApiGateway::Stage
-  #   Properties:
-  #     RestApiId: !Ref EventIngestApi
-  #     DeploymentId: !Ref EventIngestApiDeployment
-  #     Variables:
-  #       DeliveryStreamName : !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]
+  EventIngestApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref EventIngestApi
+      DeploymentId: !Ref EventIngestApiDeployment
+      StageName: prod
+      Variables:
+        DeliveryStreamName : !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]
 
   EventIngestApiPOST:
     Type: AWS::ApiGateway::Method

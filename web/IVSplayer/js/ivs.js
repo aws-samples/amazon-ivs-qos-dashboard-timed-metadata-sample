@@ -142,7 +142,7 @@ const cardInnerEl = document.getElementById("card-inner");
       `PlayerEvent - METADATA: "${metadataText}". Observed ${position}s after playback started.`
     );
     // commented by Jai till we add support for other metric types
-    //triggerQuiz(metadataText);
+    triggerQuiz(metadataText);
   });
 
   // === QoS event workflow initialization ===
