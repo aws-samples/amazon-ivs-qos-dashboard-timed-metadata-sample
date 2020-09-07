@@ -269,7 +269,6 @@ Resources:
             Type: string
           - Name: es_location
             Type: string
-          - Name:
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
           Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/player_logs/']]
           SerdeInfo:
@@ -847,31 +846,31 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
              - Name: "step_direction"
                SqlType: "VARCHAR(5)"
                Mapping: "$.step_direction"
-             - Name: CloudFront-Is-Desktop-Viewer
+             - Name: "desktop_viewer"
                SqlType: "VARCHAR(6)"
                Mapping: "$.CloudFront-Is-Desktop-Viewer"
-             - Name: CloudFront-Is-Mobile-Viewer
+             - Name: "mobile_viewer"
                SqlType: "VARCHAR(6)"
                Mapping: "$.CloudFront-Is-Mobile-Viewer"
-             - Name: CloudFront-Is-SmartTV-Viewer
+             - Name: "smarttv_viewer"
                SqlType: "VARCHAR(6)"
                Mapping: "$.CloudFront-Is-SmartTV-Viewer"
-             - Name: CloudFront-Is-Tablet-Viewer
+             - Name: "tablet_viewer"
                SqlType: "VARCHAR(6)"
                Mapping: "$.CloudFront-Is-Tablet-Viewer"
-             - Name: CloudFront-Viewer-City
+             - Name: "viewer_city"
                SqlType: "VARCHAR(50)"
                Mapping: "$.CloudFront-Viewer-City"
-             - Name: CloudFront-Viewer-Country-Name
+             - Name: "Viewer_country_name"
                SqlType: "VARCHAR(50)"
                Mapping: "$.CloudFront-Viewer-Country-Name"
-             - Name: CloudFront-Viewer-Latitude
+             - Name: "viewer_latitude"
                SqlType: "VARCHAR(20)"
                Mapping: "$.CloudFront-Viewer-Latitude"
-             - Name: CloudFront-Viewer-Longitude
+             - Name: "viewer_longitude"
                SqlType: "VARCHAR(20)"
                Mapping: "$.CloudFront-Viewer-Longitude"
-             - Name: es_location
+             - Name: "es_location"
                SqlType: "VARCHAR(30)"
                Mapping: "$.es_location"
             RecordFormat:

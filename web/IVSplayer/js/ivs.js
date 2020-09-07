@@ -205,7 +205,7 @@ const cardInnerEl = document.getElementById("card-inner");
 
   // === Send off a QoS event every minute ===
   setInterval(function () {
-    if ((Date.now() - currentEventBeginTime) > 6000) { // one QoS event every minute
+    if ((Date.now() - currentEventBeginTime) > 60000) { // one QoS event every minute
       // Send off a QoS event
       if (lastRecordedPlayerState == "PLAYING") {
         playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
