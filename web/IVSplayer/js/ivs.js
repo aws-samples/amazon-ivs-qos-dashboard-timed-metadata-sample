@@ -48,6 +48,9 @@ const cardInnerEl = document.getElementById("card-inner");
   var playingTimeMsInLastMinute = 0;
   var bufferingTimeMsInLastMinute = 0;
   var errorCountInLastMinute = 0;
+  var sessionId = ""; //unique UUID set per session
+  var userId = ""; //unique UUID set per device type if localStorage is supported. Else sessionId is used as userId
+  var myQuality = "";
   // === Define and initialize QoS event work variables ===
 
   // Attach event (player state) listeners
@@ -57,6 +60,7 @@ const cardInnerEl = document.getElementById("card-inner");
     // === Update QoS event work variables ===
     lastRecordedPlayerState = "READY";
     lastRecordedPlayerStateTime = Date.now();
+    initializeUser(sessionId);
     console.log("Set lastRecordedPlayerStateTime to ", lastRecordedPlayerStateTime);
     // === Update QoS event work variables ===
   });
@@ -89,6 +93,8 @@ const cardInnerEl = document.getElementById("card-inner");
     lastRecordedPlayerState = "PLAYING";
     lastRecordedPlayerStateTime = Date.now();
     console.log("Set lastRecordedPlayerStateTime to", lastRecordedPlayerStateTime);
+    myQuality = player.getQuality();
+    console.log("Quality :%j",myQuality);
     // === Update QoS event work variables ===
   });
   player.addEventListener(PlayerState.IDLE, function () {
@@ -145,6 +151,19 @@ const cardInnerEl = document.getElementById("card-inner");
     triggerQuiz(metadataText);
   });
 
+  player.addEventListener(PlayerEventType.QUALITY_CHANGED, function () {
+    console.log("PlayerEventType - QUALITY_CHANGED");
+    let newQuality = player.getQuality();
+    console.log("Quality changed from %j to %j",newQuality);
+    // Sent the Event only when there is change in quality. Address the initial phase where both are equal
+    if(myQuality.bitrate!=newQuality.bitrate){
+      // sent the Event (playback url, currentQuality, newQuality)
+      sendQualityChangedEvent(sendQoSEventUrl, myQuality, newQuality);
+    }
+    // save the new Quality as current Quality for future reference
+    myQuality = newQuality;
+  });
+
   // === QoS event workflow initialization ===
   // Before the player loads a new channel, send off a QoS event if the player is playing
   //   another channel
@@ -158,7 +177,7 @@ const cardInnerEl = document.getElementById("card-inner");
     }
 
     if ((playingTimeMsInLastMinute > 0) || (bufferingTimeMsInLastMinute > 0)) {
-      sendQoSEvent(sendQoSEventUrl);
+      sendPlaybackSummaryEvent(sendQoSEventUrl);
     }
   }
 
@@ -186,7 +205,7 @@ const cardInnerEl = document.getElementById("card-inner");
 
   // === Send off a QoS event every minute ===
   setInterval(function () {
-    if ((Date.now() - currentEventBeginTime) > 60000) { // one QoS event every minute
+    if ((Date.now() - currentEventBeginTime) > 6000) { // one QoS event every minute
       // Send off a QoS event
       if (lastRecordedPlayerState == "PLAYING") {
         playingTimeMsInLastMinute += (Date.now() - lastRecordedPlayerStateTime);
@@ -197,7 +216,7 @@ const cardInnerEl = document.getElementById("card-inner");
       }
 
       if ((playingTimeMsInLastMinute > 0) || (bufferingTimeMsInLastMinute > 0)) {
-        sendQoSEvent(sendQoSEventUrl);
+        sendPlaybackSummaryEvent(sendQoSEventUrl);
       }
 
       // Reset work variables
@@ -259,29 +278,52 @@ const cardInnerEl = document.getElementById("card-inner");
       createAnswers(obj, i);
     }
     cardInnerEl.style.display = "";
+    waitMessage.style.display = "";
   }
 
-  waitMessage.style.display = "";
+  //checks and returns boolean True if it's playing a Live channel
+  function is_Live(){
+    return (player.getDuration() == Infinity);
+  }
 
-  // === subroutines for sending QoS and timed metadata events ===
-  // Send QoS event
-  function sendQoSEvent(url) {
+  // === function to capture the current and new video quality details and fire the appropriate metric.
+  function sendQualityChangedEvent(url, currentQuality,newQuality) {
+    var myJson = {};
+    myJson.metric_type = "QUALITY_CHANGED";
+    myJson.client_platform = config.client_platform;
+    myJson.is_live = is_Live();
+    myJson.channel_watched = getChannelWatched(myJson.is_live);
+    var isLive = (player.getDuration() == Infinity);
+    myJson.from_rendition_group = currentQuality.group;
+    myJson.to_rendition_group = newQuality.group;
+    myJson.from_bitrate = currentQuality.bitrate;
+    myJson.to_bitrate = newQuality.bitrate;
+    myJson.step_direction = (newQuality.bitrate > currentQuality.bitrate)? "UP":"DOWN";
+
+    if (url != "") {
+      pushPayload(url,myJson);
+    }
+
+    console.log("sendPlaybackSummaryEvent ", JSON.stringify(myJson), "to", url);
+  }
+
+  // Send PlaybackSummary Event
+  function sendPlaybackSummaryEvent(url) {
     var myJson = {};
     myJson.metric_type = "PLAYBACK_SUMMARY";
-    myJson.client_platform = "web";
-    var isLive = (player.getDuration() == Infinity);
-    if (isLive) {
-      var myIndex1 = playbackUrl.indexOf("channel.") + 8;
-      var myIndex2 = playbackUrl.indexOf(".m3u8");
-      myJson.channel_watched = playbackUrl.substring(myIndex1, myIndex2);
-    } else {
-      myJson.channel_watched = playbackUrl;
-    }
-    myJson.is_live = isLive;
+    myJson.client_platform = config.client_platform;
+    myJson.is_live = is_Live();
+    myJson.channel_watched = getChannelWatched(myJson.is_live);
     myJson.error_count = errorCountInLastMinute;
     myJson.playing_time_ms = playingTimeMsInLastMinute;
     myJson.buffering_time_ms = bufferingTimeMsInLastMinute;
-    var myQuality = player.getQuality();
+
+    // if Quality of Video stream is not set until now, then initialise it
+    // myQuality is set when player state is 'PLAY' AND also when there is a PlayEventType of
+    // QUALITY_CHANGED being fired
+    if(!myQuality){
+      myQuality = player.getQuality();
+    }
     myJson.rendition_name = myQuality.name;
     myJson.rendition_height = myQuality.height;
     if (!hasReportedStartupMsOfThisChannel) {
@@ -289,7 +331,7 @@ const cardInnerEl = document.getElementById("card-inner");
     } else {
       myJson.startup_latency_ms = 0;
     }
-    if (isLive) {
+    if (myJson.is_live) {
       myJson.live_latency_ms = Math.round(player.getLiveLatency());
     } else {
       myJson.live_latency_ms = -1;
@@ -299,7 +341,18 @@ const cardInnerEl = document.getElementById("card-inner");
       pushPayload(url,myJson);
     }
 
-    console.log("sendQoSEvent ", JSON.stringify(myJson), "to", url);
+    console.log("sendPlaybackSummaryEvent ", JSON.stringify(myJson), "to", url);
+  }
+
+  // Parse and get the Channel watched from the Playback URL
+  function getChannelWatched(live){
+    if (live) {
+      var myIndex1 = playbackUrl.indexOf("channel.") + 8;
+      var myIndex2 = playbackUrl.indexOf(".m3u8");
+      return playbackUrl.substring(myIndex1, myIndex2);
+    } else {
+      return playbackUrl;
+    }
   }
 
   // Send timed metadata feedback event
@@ -318,6 +371,8 @@ const cardInnerEl = document.getElementById("card-inner");
 
   function pushPayload(endpoint, payload){
     let wrapPayload = {};
+    payload.session_id = sessionId;
+    payload.user_id = userId;
     wrapPayload.Records = [];
     let record = {
         Data: payload
@@ -337,6 +392,22 @@ const cardInnerEl = document.getElementById("card-inner");
     }).fail(function(){
       console.log("Error");
     });
+  }
+
+  // the unique User ID which is a random UUID. Initially we just use the Session ID
+  // and once set it will continue using the same user_id but different session_id per session
+  function initializeUser(){
+    sessionId = player.getSessionId();
+    if (typeof(Storage) !== "undefined") {
+
+      if(!localStorage.getItem("ivs_qos_user_id")){
+        localStorage.setItem("ivs_qos_user_id",sessionId);
+      }
+      userId = localStorage.getItem("ivs_qos_user_id");
+    } else {
+      console.log("Sorry! No Web Storage support. Using session Id as user Id");
+      userId = sessionId;
+    }
   }
   // === subroutines for sending QoS and timed metadata events ===
 

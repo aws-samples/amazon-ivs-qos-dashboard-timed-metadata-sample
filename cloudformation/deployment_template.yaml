@@ -124,6 +124,10 @@ Resources:
           Id: myS3Origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CFOriginAccessIdentity}
+        - DomainName: !Sub ${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com
+          Id: APIGWRegionalOrigin
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
         Enabled: True
         Comment: !Sub "${AWS::StackName} - distribution for vod website"
         DefaultRootObject: index.html
@@ -143,6 +147,30 @@ Resources:
               - 'Access-Control-Request-Headers'
               - 'Access-Control-Request-Method'
               - 'Origin'
+        CacheBehaviors:
+          -
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - PATCH
+              - POST
+              - DELETE
+            PathPattern: "/prod/*"
+            TargetOriginId: APIGWRegionalOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            ForwardedValues:
+              QueryString: false
+              Headers:
+                - 'CloudFront-Viewer-Country-Name'
+                - 'CloudFront-Viewer-City'
+                - 'CloudFront-Viewer-Latitude'
+                - 'CloudFront-Viewer-Longitude'
+                - 'CloudFront-Is-SmartTV-Viewer'
+                - 'CloudFront-Is-Tablet-Viewer'
+                - 'CloudFront-Is-Mobile-Viewer'
+                - 'CloudFront-Is-Desktop-Viewer'
         PriceClass: PriceClass_All
         ViewerCertificate:
           CloudFrontDefaultCertificate: True
@@ -185,6 +213,8 @@ Resources:
             Type: string
           - Name: user_id
             Type: string
+          - Name: session_id
+            Type: string
           - Name: client_platform
             Type: string
           - Name: channel_watched
@@ -211,6 +241,35 @@ Resources:
             Type: string
           - Name: answer
             Type: string
+          - Name: from_rendition_group
+            Type: string
+          - Name: to_rendition_group
+            Type: string
+          - Name: from_bitrate
+            Type: int
+          - Name: to_bitrate
+            Type: int
+          - Name: step_direction
+            Type: string
+          - Name: CloudFront-Is-Desktop-Viewer
+            Type: string
+          - Name: CloudFront-Is-Mobile-Viewer
+            Type: string
+          - Name: CloudFront-Is-SmartTV-Viewer
+            Type: string
+          - Name: CloudFront-Is-Tablet-Viewer
+            Type: string
+          - Name: CloudFront-Viewer-City
+            Type: string
+          - Name: CloudFront-Viewer-Country-Name
+            Type: string
+          - Name: CloudFront-Viewer-Latitude
+            Type: string
+          - Name: CloudFront-Viewer-Longitude
+            Type: string
+          - Name: es_location
+            Type: string
+          - Name:
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
           Location: !Join ['',['s3://',!Ref PlayerLogsBucket,'/player_logs/']]
           SerdeInfo:
@@ -695,12 +754,6 @@ Resources:
  GROUP BY \"client_platform\", \n
  STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
  UNION ALL \n
- -- concurrent users \n
- SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", count(*) \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
- UNION ALL \n
  -- average start up time in seconds \n
  SELECT STREAM 'STARTUP_TIME', 'Seconds', \"client_platform\", AVG(\"startup_latency_ms\")/1000 \n
  FROM     \"SOURCE_SQL_STREAM_001\"  where \"metric_type\"='PLAYBACK_SUMMARY' \n
@@ -717,7 +770,19 @@ SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_ti
 SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\")/1000 \n
  FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
  GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n"
+ STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n
+-- concurrent users \n
+CREATE OR REPLACE PUMP stream_pump AS \n
+INSERT INTO PLAYER_STATS \n
+SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"user_id\") AS unique_count \n
+  FROM ( \n
+    SELECT STREAM DISTINCT rowtime as window_time, \n
+      \"client_platform\", \n
+      \"user_id\", \n
+      STEP((SOURCE_SQL_STREAM_001.rowtime) BY INTERVAL '60' SECOND) \n
+      FROM SOURCE_SQL_STREAM_001) as distinct_stream \n
+  GROUP BY \"client_platform\", \n
+      STEP((distinct_stream.window_time) BY INTERVAL '60' SECOND);"
       Inputs:
         - NamePrefix: "SOURCE_SQL_STREAM"
           InputSchema:
@@ -734,6 +799,9 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
              - Name: "user_id"
                SqlType: "VARCHAR(64)"
                Mapping: "$.user_id"
+             - Name: "session_id"
+               SqlType: "VARCHAR(64)"
+               Mapping: "$.session_id"
              - Name: "is_live"
                SqlType: "BOOLEAN"
                Mapping: "$.is_live"
@@ -764,6 +832,48 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
              - Name: "answer"
                SqlType: "VARCHAR(20)"
                Mapping: "$.answer"
+             - Name: "from_rendition_group"
+               SqlType: "VARCHAR(20)"
+               Mapping: "$.from_rendition_group"
+             - Name: "to_rendition_group"
+               SqlType: "VARCHAR(20)"
+               Mapping: "$.to_rendition_group"
+             - Name: "from_bitrate"
+               SqlType: "BIGINT"
+               Mapping: "$.from_bitrate"
+             - Name: "to_bitrate"
+               SqlType: "BIGINT"
+               Mapping: "$.to_bitrate"
+             - Name: "step_direction"
+               SqlType: "VARCHAR(5)"
+               Mapping: "$.step_direction"
+             - Name: CloudFront-Is-Desktop-Viewer
+               SqlType: "VARCHAR(6)"
+               Mapping: "$.CloudFront-Is-Desktop-Viewer"
+             - Name: CloudFront-Is-Mobile-Viewer
+               SqlType: "VARCHAR(6)"
+               Mapping: "$.CloudFront-Is-Mobile-Viewer"
+             - Name: CloudFront-Is-SmartTV-Viewer
+               SqlType: "VARCHAR(6)"
+               Mapping: "$.CloudFront-Is-SmartTV-Viewer"
+             - Name: CloudFront-Is-Tablet-Viewer
+               SqlType: "VARCHAR(6)"
+               Mapping: "$.CloudFront-Is-Tablet-Viewer"
+             - Name: CloudFront-Viewer-City
+               SqlType: "VARCHAR(50)"
+               Mapping: "$.CloudFront-Viewer-City"
+             - Name: CloudFront-Viewer-Country-Name
+               SqlType: "VARCHAR(50)"
+               Mapping: "$.CloudFront-Viewer-Country-Name"
+             - Name: CloudFront-Viewer-Latitude
+               SqlType: "VARCHAR(20)"
+               Mapping: "$.CloudFront-Viewer-Latitude"
+             - Name: CloudFront-Viewer-Longitude
+               SqlType: "VARCHAR(20)"
+               Mapping: "$.CloudFront-Viewer-Longitude"
+             - Name: es_location
+               SqlType: "VARCHAR(30)"
+               Mapping: "$.es_location"
             RecordFormat:
               RecordFormatType: "JSON"
               MappingParameters:
@@ -861,9 +971,11 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
         RequestTemplates:
           application/json: !Sub
           - |
-            #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms"])
+            #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms","from_bitrate","to_bitrate","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
+            #set($header_params=["CloudFront-Viewer-Country-Name","CloudFront-Viewer-City","CloudFront-Viewer-Latitude","CloudFront-Viewer-Longitude","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
             ## read the Data element from payload
             #set($inputjson = $input.path('$..Data'))
+            #set($inputheaders = $input.params())
             ## set the Delivery Stream Kinesis Firehose stream name
             #set($output = "{ ""DeliveryStreamName"": ""$stageVariables.DeliveryStreamName"", ""Records"": [ ")
             ## for each payload event do the following
@@ -879,6 +991,21 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
                   #end
                   #set($event = "$event$prop")
               #end
+              #foreach($attr in $header_params)
+                  ## check if this is string type attr or not. Accordingly use "" around values
+                  #if($inputheaders.contains($attr))
+                      #if($non_string_attrs.contains($attr))
+                        #set($prop = """$attr"":$input.params($attr),")
+                      #else
+                        #set($prop = """$attr"":""$input.params($attr)"",")
+                      #end
+                  #end
+                  #set($event = "$event$prop")
+              #end
+
+              #set($longitude = $input.params('CloudFront-Viewer-Longitude'))
+              #set($latitude = $input.params('CloudFront-Viewer-Latitude'))
+              #set($event = "$event""es_location"":""$latitude,$longitude"",")
               ## set the timestamp of event to be the time at which the APIGW received the event
               #set($event = "$event""event_time"":$context.requestTimeEpoch")
               #set($event = "$event}")
@@ -891,6 +1018,51 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
               #end
               #set($output = "$output]}")
               $output
+          #
+          # - |
+          #   #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms","from_bitrate","to_bitrate"])
+          #   #set($header_params=["CloudFront-Viewer-Country-Name","CloudFront-Viewer-City","CloudFront-Viewer-Latitude","CloudFront-Viewer-Longitude","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
+          #   ## read the Data element from payload
+          #   #set($inputjson = $input.path('$..Data'))
+          #   #set($inputheaders = $input.params())
+          #   ## set the Delivery Stream Kinesis Firehose stream name
+          #   #set($output = "{ ""DeliveryStreamName"": ""$stageVariables.DeliveryStreamName"", ""Records"": [ ")
+          #   ## for each payload event do the following
+          #   #foreach($elem in $inputjson)
+          #     #set($event = "{")
+          #     ## read the attributes of the json object dynamically
+          #     #foreach($attr in $elem.keySet())
+          #         ## check if this is string type attr or not. Accordingly use "" around values
+          #         #if($non_string_attrs.contains($attr))
+          #           #set($prop = """$attr"":$elem.get($attr),")
+          #         #else
+          #           #set($prop = """$attr"":""$elem.get($attr)"",")
+          #         #end
+          #         #set($event = "$event$prop")
+          #     #end
+          #     #foreach($attr in $header_params)
+          #         ## check if this is string type attr or not. Accordingly use "" around values
+          #         #if($inputheaders.contains($attr))
+          #             #if($non_string_attrs.contains($attr))
+          #               #set($prop = """$attr"":$input.params($attr),")
+          #             #else
+          #               #set($prop = """$attr"":""$input.params($attr)"",")
+          #             #end
+          #         #end
+          #         #set($event = "$event$prop")
+          #     #end
+          #     ## set the timestamp of event to be the time at which the APIGW received the event
+          #     #set($event = "$event""event_time"":$context.requestTimeEpoch")
+          #     #set($event = "$event}")
+          #     ## encode to base64 for delivery
+          #     #set($payload = "{""Data"":""$util.base64Encode($event)""}")
+          #     #set($output = "$output$payload")
+          #     #if($foreach.hasNext)
+          #         #set($output = "$output,")
+          #     #end
+          #     #end
+          #     #set($output = "$output]}")
+          #     $output
           - {DeliveryStreamName: !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
