@@ -321,8 +321,8 @@ Resources:
           SourceFileBucket: !Join ["-", [!FindInMap ["SourceCodeBucket", "General", "S3Bucket"], !Ref "AWS::Region"]]
           SourceUIFilePath: !Join ["/", [!FindInMap ["SourceCodeBucket", "General", "LambdaUIDeploymentCodePrefix"], !FindInMap ["SourceCodeBucket", "General", "UICodePrefix"], "player-ui.zip"]]
           UIPrefix: 'ui'
-          PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
-          AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
+          PlayerSummaryEndpoint: !Sub 'https://${CFDistribution.DomainName}/prod/streams'
+          AnswerSummaryEndpoint: !Sub 'https://${CFDistribution.DomainName}/prod/streams'
           Playback_URL: !Ref PlaybackURL
       Handler: index.handler
       Role: !GetAtt DeployFunctionRole.Arn
