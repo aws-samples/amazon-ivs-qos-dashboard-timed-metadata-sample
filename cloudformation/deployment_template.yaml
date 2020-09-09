@@ -766,7 +766,7 @@ SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_ti
  STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
    UNION ALL \n
 -- live latency \n
-SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_sec\")/1000 \n
+SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_sec\") \n
  FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
  GROUP BY \"client_platform\", \n
  STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n
