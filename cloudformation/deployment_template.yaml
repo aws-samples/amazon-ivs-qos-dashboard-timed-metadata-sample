@@ -233,7 +233,7 @@ Resources:
             Type: int
           - Name: startup_latency_ms
             Type: int
-          - Name: live_latency_ms
+          - Name: live_latency_sec
             Type: int
           - Name: event_time
             Type: timestamp
@@ -766,7 +766,7 @@ SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_ti
  STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
    UNION ALL \n
 -- live latency \n
-SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\")/1000 \n
+SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_sec\")/1000 \n
  FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
  GROUP BY \"client_platform\", \n
  STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n
@@ -822,9 +822,9 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
              - Name: "startup_latency_ms"
                SqlType: "BIGINT"
                Mapping: "$.startup_latency_ms"
-             - Name: "live_latency_ms"
+             - Name: "live_latency_sec"
                SqlType: "BIGINT"
-               Mapping: "$.live_latency_ms"
+               Mapping: "$.live_latency_sec"
              - Name: "question"
                SqlType: "VARCHAR(50)"
                Mapping: "$.question"
@@ -970,7 +970,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
         RequestTemplates:
           application/json: !Sub
           - |
-            #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms","from_bitrate","to_bitrate","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
+            #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_sec","from_bitrate","to_bitrate","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
             #set($header_params=["CloudFront-Viewer-Country-Name","CloudFront-Viewer-City","CloudFront-Viewer-Latitude","CloudFront-Viewer-Longitude","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
             ## read the Data element from payload
             #set($inputjson = $input.path('$..Data'))
@@ -1004,7 +1004,9 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
 
               #set($longitude = $input.params('CloudFront-Viewer-Longitude'))
               #set($latitude = $input.params('CloudFront-Viewer-Latitude'))
-              #set($event = "$event""es_location"":""$latitude,$longitude"",")
+              #if($longitude != "" && $latitude != "")
+                #set($event = "$event""es_location"":""$latitude,$longitude"",")
+              #end
               ## set the timestamp of event to be the time at which the APIGW received the event
               #set($event = "$event""event_time"":$context.requestTimeEpoch")
               #set($event = "$event}")
@@ -1019,7 +1021,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
               $output
           #
           # - |
-          #   #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_ms","from_bitrate","to_bitrate"])
+          #   #set($non_string_attrs=["is_live","error_count","playing_time_ms","buffering_time_ms","rendition_height","startup_latency_ms","live_latency_sec","from_bitrate","to_bitrate"])
           #   #set($header_params=["CloudFront-Viewer-Country-Name","CloudFront-Viewer-City","CloudFront-Viewer-Latitude","CloudFront-Viewer-Longitude","CloudFront-Is-SmartTV-Viewer","CloudFront-Is-Tablet-Viewer","CloudFront-Is-Mobile-Viewer","CloudFront-Is-Desktop-Viewer"])
           #   ## read the Data element from payload
           #   #set($inputjson = $input.path('$..Data'))

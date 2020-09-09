@@ -332,9 +332,9 @@ const cardInnerEl = document.getElementById("card-inner");
       myJson.startup_latency_ms = 0;
     }
     if (myJson.is_live) {
-      myJson.live_latency_ms = Math.round(player.getLiveLatency());
+      myJson.live_latency_sec = Math.round(player.getLiveLatency());
     } else {
-      myJson.live_latency_ms = -1;
+      myJson.live_latency_sec = -1;
     }
 
     if (url != "") {
