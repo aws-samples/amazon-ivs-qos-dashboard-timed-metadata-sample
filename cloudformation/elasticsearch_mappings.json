@@ -131,7 +131,7 @@
         "is_live" : {
           "type" : "boolean"
         },
-        "live_latency_ms" : {
+        "live_latency_sec" : {
           "type" : "long"
         },
         "metric_type" : {
