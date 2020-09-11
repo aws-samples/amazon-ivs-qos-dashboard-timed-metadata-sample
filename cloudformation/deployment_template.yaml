@@ -41,7 +41,7 @@ Parameters:
   ElasticSearchIndexName:
     Type: String
     Description: ElasticSearch Index Name
-    Default: player_summary1
+    Default: player_summary
 
   ElasticSearchIndexRotation:
     Type: String
