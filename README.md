@@ -50,7 +50,7 @@ The solution is deployed using an AWS CloudFormation template with AWS Lambda ba
 ![Solution Components](./docs/images/solution_components.png)
 
 ## Backend Architecture
-![Backend Architecture](./docs/images/architecture.png)
+![Backend Architecture](./docs/images/architecture.jpg)
 
 ## Build Pre-requisites
 
