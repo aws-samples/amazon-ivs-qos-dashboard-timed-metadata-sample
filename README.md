@@ -17,7 +17,7 @@ Captured metrics are delivered to AWS via API Gateway and Kinesis Firehose. Kine
 
 aws ivs get-channel --arn [channel ARN]
 
-3. Deploy the cloudformation template either from one of the links below, or from folder: cloudformation/deployment.yaml if you build the solution in your local dev environment (see below for build instructions)
+3. Deploy the cloudformation template either from one of the links below, or from folder: templates/deployment.yaml if you build the solution in your local dev environment (see below for build instructions)
 4. When prompted for the PlaybackURL Parameter at step 2 of the CloudFormation Stack Deployment, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel, or leave this at the default value.
 5. Once the CloudFormation template is deployed, navigate to the Output tab in CloudFormation as several settings are emitted here. You can open the demo app by clicking on the PlayerURL link.
 
@@ -42,9 +42,9 @@ The solution is deployed using an AWS CloudFormation template with AWS Lambda ba
 
 | AWS Region | AWS CloudFormation Template URL |
 |:-----------|:----------------------------|
-| EU (Ireland) |<a href="https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-eu-west-1.s3-eu-west-1.amazonaws.com%2Fqos%2Fv0.3%2Fcloudformation%2Fdeployment.yaml" target="_blank">Launch stack</a> |
-| US (N.Virginia) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-east-1.s3.amazonaws.com%2Fqos%2Fv0.3%2Fcloudformation%2Fdeployment.yaml" target="_blank">Launch stack</a> |
-| US (Oregon) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-west-2.s3-us-west-2.amazonaws.com%2Fqos%2Fv0.3%2Fcloudformation%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| EU (Ireland) |<a href="https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-eu-west-1.s3-eu-west-1.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| US (N.Virginia) |<a href="https://console.aws.amazon.com/templates/home?region=us-east-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-east-1.s3.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| US (Oregon) |<a href="https://console.aws.amazon.com/templates/home?region=us-west-2#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-west-2.s3-us-west-2.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
 
 ## High level solution components
 ![Solution Components](./docs/images/solution_components.png)

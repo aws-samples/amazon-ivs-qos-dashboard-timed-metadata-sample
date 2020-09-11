@@ -61,7 +61,7 @@ Now Kinesis Firehose can post to your ES cluster.
 1. Navigate to Dev Tools
 1. Create the index by using the `PUT` command followed by the index name. The Elastic Search index name is what you provided while deploying the CloudFormation template in the parameter 'ElasticSearchIndexName'
 ![Create Index](./images/es-create-index.png)
-1. Next create the index schema by using command `PUT INDEX_NAME/_mappings` along with the schema definition available under 'cloudformation/elasticsearch_mappings.json'
+1. Next create the index schema by using command `PUT INDEX_NAME/_mappings` along with the schema definition available under 'templates/elasticsearch_mappings.json'
 ![Create Index Schema](./images/es-create-index-schema.png)
 
 ### Next define the Elastic Search index pattern:
@@ -78,7 +78,6 @@ You should be able to see all the fields in the index and its data types and oth
 ### Creating the dashboards on Elastic Search:
 1. Navigate to Management
 1. Click on 'Saved Objects' and click the `Import` link on the right hand side.
-1. Select 'export.ndjson' file which is under folder `cloudformation` and import the dashboard.
+1. Select 'export.ndjson' file which is under folder `templates` and import the dashboard.
 1. Navigate to Dashboard and select the newly created dashboard.
 1. You should see a set of visualizations auto created and its time now to push some events to see the dashboard in action
- 
