@@ -68,7 +68,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 - Type *"QoS event"* in "Filter";
 
-- See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
+- See the QoS events of PLAY, QUALITY_CHANGED, PLAYBACK_SUMMARY (see below).
 
 ![Screenshot of console output for playback QoS events](./README_images/section2dot2_2.png)
 
