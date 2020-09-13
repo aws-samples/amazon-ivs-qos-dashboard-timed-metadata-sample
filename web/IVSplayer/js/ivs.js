@@ -106,7 +106,9 @@ const cardInnerEl = document.getElementById("card-inner");
       startupLatencyMsOfThisSession = Date.now() - lastPlayerStateREADYTime;
       sendPlaybackStartEvent(sendQoSEventUrl);
 
-      lastQuality = player.getQuality();
+      if (lastQuality === undefined) {
+        lastQuality = player.getQuality();
+      }
     } else {
       if (lastPlayerState == "BUFFERING") { // BUFFERING -> PLAYING (in the middle of a playback session)
         bufferingTimeMsInLastMinute += Date.now() - lastPlayerStateUpdateOrPlaybackSummaryEventSentTime;
@@ -169,7 +171,12 @@ const cardInnerEl = document.getElementById("card-inner");
 
     // === Send off quality change event and update QoS event work variables ===
     let newQuality = player.getQuality();
-    if (lastQuality.bitrate != newQuality.bitrate) {
+    if (lastQuality === undefined) {
+      lastQuality = newQuality;
+      console.log(
+        `Quality initialized to "${lastQuality.name}".`
+      );
+    } else if (lastQuality.bitrate != newQuality.bitrate) {
       console.log(
         `Quality changed from "${lastQuality.name}" to "${newQuality.name}".`
       );
@@ -356,14 +363,8 @@ const cardInnerEl = document.getElementById("card-inner");
       myJson.playing_time_ms = playingTimeMsInLastMinute;
       myJson.buffering_time_ms = bufferingTimeMsInLastMinute;
       myJson.buffering_count = bufferingCountInLastMinute;
-      // if Quality of Video stream is not set until now, then initialise it
-      // myQuality is set when player state is 'PLAY' AND also when there is a PlayEventType of
-      // QUALITY_CHANGED being fired
-      if(!myQuality){
-        myQuality = player.getQuality();
-      }
-      myJson.rendition_name = myQuality.name;
-      myJson.rendition_height = myQuality.height;
+      myJson.rendition_name = lastQuality.name;
+      myJson.rendition_height = lastQuality.height;
       if (myJson.is_live) {
         myJson.live_latency_sec = Math.round(player.getLiveLatency());
       } else {
@@ -434,7 +435,7 @@ const cardInnerEl = document.getElementById("card-inner");
       pushPayload(url,myJson);
     }
 
-    console.log("send timed metadata event - QuizAnswer ", JSON.stringify(myJson), " to ", url);
+    console.log("send timed metadata feedback event - QuizAnswer ", JSON.stringify(myJson), " to ", url);
   }
 
   function pushPayload(endpoint, payload){

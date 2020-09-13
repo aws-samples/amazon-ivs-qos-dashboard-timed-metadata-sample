@@ -54,7 +54,7 @@ http {
 
 - After you are done with your experiment, run ```sudo brew services stop nginx``` to stop Nginx.
 
-### 2.2 Run the Sample Web Player and See the Assembled Timed-Metadata-Feedback & Playback-QoS Events
+### 2.2 Run the Sample Web Player and See the Assembled Timed-Metadata-Feedback & QoS Events
 
 In Chrome, type *http://localhost:8080/* in the web address bar, the sample web player will play a test channel with multiple-choice questions (see below). If your selected answer is correct, the answer window will turn green, otherwise it will be red.
 
@@ -66,7 +66,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 - Select "Console";
 
-- Type *"sendQuizAnswer"* in "Filter";
+- Type *"timed metadata feedback"* in "Filter";
 
 - See the timed-metadata-feedback events including the question and the selected answer (see below).
 
@@ -74,7 +74,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
 
-- Type *"send QoS event"* in "Filter";
+- Type *"QoS event"* in "Filter";
 
 - See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
