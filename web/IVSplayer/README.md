@@ -66,19 +66,17 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 - Select "Console";
 
-- Type *"timed metadata feedback"* in "Filter";
-
-- See the timed-metadata-feedback events including the question and the selected answer (see below).
-
-![Screenshot of console output for timed-metadata-feedback events](./README_images/section2dot2_2.png)
-
-Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
-
 - Type *"QoS event"* in "Filter";
 
 - See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
-![Screenshot of console output for playback QoS events](./README_images/section2dot2_3.png)
+![Screenshot of console output for playback QoS events](./README_images/section2dot2_2.png)
+
+- Type *"timed metadata feedback"* in "Filter";
+
+- See the timed-metadata-feedback events including the question and the selected answer (see below).
+
+![Screenshot of console output for timed-metadata-feedback events](./README_images/section2dot2_3.png)
 
 ### 2.3 Customize Your IVS Video Channel and Dashboard Backend
 
