@@ -61,9 +61,11 @@ const cardInnerEl = document.getElementById("card-inner");
 
     // === Send off playback end event and reset QoS event work variables ===
     // Before the player loads a new channel, send off the last QoS event of the previous
-    //   channel played
+    //   channel played.
     // Note: This will never happens in this demo, because the demo doesn't offer an interface
-    //   to load a new channel, but an IVS customer App should have this logic
+    //   to load a new channel, but an IVS customer App should have this logic.
+    // (Yueshi to do) We also need to call this function if an IVS cusomter App or webpage is closed,
+    //   how to detect this situation and call this function?
     if (hasBeenPlayingVideo) {
       sendOffLastPlaybackSummaryEventAndPlaybackEndEvent();
     }
@@ -102,7 +104,7 @@ const cardInnerEl = document.getElementById("card-inner");
     if (startupLatencyMsOfThisSession == 0) { // the very beginning of a playback session
       lastPlaybackStartOrSummaryEventSentTime = Date.now();
       startupLatencyMsOfThisSession = Date.now() - lastPlayerStateREADYTime;
-      sendPlaybackStartEvent();
+      sendPlaybackStartEvent(sendQoSEventUrl);
 
       lastQuality = player.getQuality();
     } else {
@@ -196,15 +198,7 @@ const cardInnerEl = document.getElementById("card-inner");
   // === Send off a QoS event every minute ===
   setInterval(function () {
     if ((lastPlaybackStartOrSummaryEventSentTime != -1) && ((Date.now() - lastPlaybackStartOrSummaryEventSentTime) > 60000)) {
-      if (lastPlayerState == "PLAYING") { // collect the uncounted time in the PLAYING state
-        playingTimeMsInLastMinute += (Date.now() - lastPlayerStateUpdateOrPlaybackSummaryEventSentTime);
-      } else if (lastPlayerState == "BUFFERING") { // Bcollect the uncounted time in the BUFFERING state
-        bufferingTimeMsInLastMinute += (Date.now() - lastPlayerStateUpdateOrPlaybackSummaryEventSentTime);
-      }
-
-      if ((playingTimeMsInLastMinute > 0) || (bufferingTimeMsInLastMinute > 0)) {
-        sendPlaybackSummaryEvent(sendQoSEventUrl);
-      }
+      sendPlaybackSummaryEventIfNecessary(sendQoSEventUrl);
 
       // Reset work variables
       lastPlayerStateUpdateOrPlaybackSummaryEventSentTime = lastPlaybackStartOrSummaryEventSentTime = Date.now();
@@ -268,7 +262,7 @@ const cardInnerEl = document.getElementById("card-inner");
     waitMessage.style.display = "";
   }
 
-  // === subroutines for sending QoS events and timed metadata events ===
+  // === subroutines for sending QoS events and timed metadata feedback events ===
   // Set the User and Session ID when the player loads a new video. The unique User ID is a random UUID, set as the very first
   //   Session ID of this user, and remains the same even different sessions are played.
   function setUserIDSessionID(){
@@ -291,39 +285,109 @@ const cardInnerEl = document.getElementById("card-inner");
   }
 
   // Send off the last PLAYBACK_SUMMARY event and the STOP event
-  // (Yueshi to do) How to call this function when the browser is closed
   function sendOffLastPlaybackSummaryEventAndPlaybackEndEvent() {
-    if (lastPlayerState == "PLAYING") {
+    sendPlaybackSummaryEventIfNecessary(sendQoSEventUrl);
+    sendPlaybackEndEvent(sendQoSEventUrl); 
+  }
+
+  // Send playback start (PLAY) event
+  function sendPlaybackStartEvent(url) {
+      // (Yueshi to do) send out PLAY event, including startupLatencyMsOfThisSession, myJson.startup_latency_ms
+      var myJson = {};
+      myJson.metric_type = "STOP";
+  
+      myJson.user_id = userId;
+      myJson.session_id = sessionId;
+      
+      myJson.client_platform = config.client_platform;
+      myJson.is_live = isLiveChannel();
+      myJson.channel_watched = getChannelWatched(myJson.is_live);
+      
+      myJson.startup_latency_ms = startupLatencyMsOfThisSession;
+  
+      if (url != "") {
+        pushPayload(url,myJson);
+      }
+  
+      console.log("send QoS event - Play ", JSON.stringify(myJson), "to", url);
+  }
+
+  // Send playback end (STOP) event
+  function sendPlaybackEndEvent(url) {
+    var myJson = {};
+    myJson.metric_type = "STOP";
+
+    myJson.user_id = userId;
+    myJson.session_id = sessionId;
+
+    myJson.client_platform = config.client_platform;
+    myJson.is_live = isLiveChannel();
+    myJson.channel_watched = getChannelWatched(myJson.is_live);
+
+    if (url != "") {
+      pushPayload(url,myJson);
+    }
+
+    console.log("send QoS event - Stop ", JSON.stringify(myJson), "to", url);
+  }
+
+  // Send playback QoS summary (PLAYBACK_SUMMARY) event
+  function sendPlaybackSummaryEventIfNecessary(url) {
+    if (lastPlayerState == "PLAYING") { // collect the uncounted time in the PLAYING state
       playingTimeMsInLastMinute += (Date.now() - lastPlayerStateUpdateOrPlaybackSummaryEventSentTime);
-    } else if (lastPlayerState == "BUFFERING") {
+    } else if (lastPlayerState == "BUFFERING") { // Bcollect the uncounted time in the BUFFERING state
       bufferingTimeMsInLastMinute += (Date.now() - lastPlayerStateUpdateOrPlaybackSummaryEventSentTime);
     }
 
     if ((playingTimeMsInLastMinute > 0) || (bufferingTimeMsInLastMinute > 0)) {
-      sendPlaybackSummaryEvent(sendQoSEventUrl);
+      var myJson = {};
+      myJson.metric_type = "PLAYBACK_SUMMARY";
+
+      myJson.user_id = userId;
+      myJson.session_id = sessionId;
+
+      myJson.client_platform = config.client_platform;
+      myJson.is_live = isLiveChannel();
+      myJson.channel_watched = getChannelWatched(myJson.is_live);
+
+      myJson.error_count = errorCountInLastMinute;
+      myJson.playing_time_ms = playingTimeMsInLastMinute;
+      myJson.buffering_time_ms = bufferingTimeMsInLastMinute;
+      myJson.buffering_count = bufferingCountInLastMinute;
+      // if Quality of Video stream is not set until now, then initialise it
+      // myQuality is set when player state is 'PLAY' AND also when there is a PlayEventType of
+      // QUALITY_CHANGED being fired
+      if(!myQuality){
+        myQuality = player.getQuality();
+      }
+      myJson.rendition_name = myQuality.name;
+      myJson.rendition_height = myQuality.height;
+      if (myJson.is_live) {
+        myJson.live_latency_sec = Math.round(player.getLiveLatency());
+      } else {
+        myJson.live_latency_sec = -1;
+      }
+  
+      if (url != "") {
+        pushPayload(url,myJson);
+      }
+  
+      console.log("send QoS event - PlaybackSummary ", JSON.stringify(myJson), " to ", url);
     }
-
-    sendPlaybackEndEvent(); 
-  }
-
-  // (Yueshi to do) Send playback start (PLAY) event
-  function sendPlaybackStartEvent() {
-      // (Yueshi to do) send out PLAY event, including startupLatencyMsOfThisSession, myJson.startup_latency_ms
-  }
-
-  // (Yueshi to do) Send playback end (STOP) event
-  function sendPlaybackEndEvent() {
-
   }
 
   // Send quality (i.e., rendition) change (QUALITY_CHANGE) event
   function sendQualityChangedEvent(url, lastQuality, newQuality) {
     var myJson = {};
     myJson.metric_type = "QUALITY_CHANGED";
+
+    myJson.user_id = userId;
+    myJson.session_id = sessionId;
+
     myJson.client_platform = config.client_platform;
     myJson.is_live = isLiveChannel();
     myJson.channel_watched = getChannelWatched(myJson.is_live);
-    var isLive = (player.getDuration() == Infinity);
+
     myJson.from_rendition_group = lastQuality.group;
     myJson.to_rendition_group = newQuality.group;
     myJson.from_bitrate = lastQuality.bitrate;
@@ -334,40 +398,7 @@ const cardInnerEl = document.getElementById("card-inner");
       pushPayload(url,myJson);
     }
 
-    console.log("sendQualityChangedEvent ", JSON.stringify(myJson), "to", url);
-  }
-
-  // Send playback QoS summary (PLAYBACK_SUMMARY) event
-  function sendPlaybackSummaryEvent(url) {
-    var myJson = {};
-    myJson.metric_type = "PLAYBACK_SUMMARY";
-    myJson.client_platform = config.client_platform;
-    myJson.is_live = isLiveChannel();
-    myJson.channel_watched = getChannelWatched(myJson.is_live);
-    myJson.error_count = errorCountInLastMinute;
-    myJson.playing_time_ms = playingTimeMsInLastMinute;
-    myJson.buffering_time_ms = bufferingTimeMsInLastMinute;
-    myJson.buffering_count = bufferingCountInLastMinute;
-
-    // if Quality of Video stream is not set until now, then initialise it
-    // myQuality is set when player state is 'PLAY' AND also when there is a PlayEventType of
-    // QUALITY_CHANGED being fired
-    if(!myQuality){
-      myQuality = player.getQuality();
-    }
-    myJson.rendition_name = myQuality.name;
-    myJson.rendition_height = myQuality.height;
-    if (myJson.is_live) {
-      myJson.live_latency_sec = Math.round(player.getLiveLatency());
-    } else {
-      myJson.live_latency_sec = -1;
-    }
-
-    if (url != "") {
-      pushPayload(url,myJson);
-    }
-
-    console.log("sendPlaybackSummaryEvent ", JSON.stringify(myJson), "to", url);
+    console.log("send QoS event - QualityChanged ", JSON.stringify(myJson), " to ", url);
   }
 
   // Check whether the video being played is live or VOD
@@ -390,6 +421,10 @@ const cardInnerEl = document.getElementById("card-inner");
   function sendQuizAnswer(url, question, answer) {
     var myJson = {};
     myJson.metric_type = "QUIZ_ANSWER";
+
+    myJson.user_id = userId;
+    myJson.session_id = sessionId;
+
     myJson.question = question;
     myJson.answer = answer;
 
@@ -397,13 +432,11 @@ const cardInnerEl = document.getElementById("card-inner");
       pushPayload(url,myJson);
     }
 
-    console.log("sendQuizAnswer ", JSON.stringify(myJson), "to", url);
+    console.log("send timed metadata event - QuizAnswer ", JSON.stringify(myJson), " to ", url);
   }
 
   function pushPayload(endpoint, payload){
     let wrapPayload = {};
-    payload.session_id = sessionId;
-    payload.user_id = userId;
     wrapPayload.Records = [];
     let record = {
         Data: payload

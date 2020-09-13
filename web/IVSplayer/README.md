@@ -6,9 +6,19 @@ This sample web player is written based on IVS player SDK 1.0.0, and can
 
 - Play an IVS live stream (or an IVS VOD asset);
 
-- Based on the player SDK's events, assemble playback QoS events and send them to an IVS QoS dashboard backend;
+- Based on the player SDK's events, assemble playback QoS events (of the following types) and send them to an IVS QoS dashboard backend;
 
-- Render multiple-choice questions based on the timed metadata embedded in an IVS live (or VOD) video, assemble question/answer events and send them to an IVS timed-metadata-feedback dashboard backend.
+  - PLAY: at the beginning of a playback session;
+
+  - STOP: at the end of a playback session;
+
+  - PLAYBACK_SUMMARY: periodically (e.g., every minute) during a playback session;
+
+  - QUALITY_CHANGE: whenever rendition change takes place.
+
+- Render multiple-choice questions based on the timed metadata embedded in an IVS live (or VOD) video, assemble question/answer events (of the following type) and send them to an IVS timed-metadata-feedback dashboard backend;
+
+  - QUIZ_ANSWER: whenever a multiple-choice question is answered.
 
 ## 2. Play With the Sample Web Player Yourself
 
@@ -64,15 +74,15 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
 
-- Type *"sendQoSEvent"* in "Filter";
+- Type *"send QS event"* in "Filter";
 
 - See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
 ![Screenshot of console output for playback QoS events](./README_images/section2dot2_3.png)
 
-### 2.3 Customize Your IVS Video and Dashboard Backend
+### 2.3 Customize Your IVS Video Channel and Dashboard Backend
 
-In *.js/config.js*, replace the default values with the playback URL of your IVS live (or VOD) video, also add the Gateway API end points of your backend:
+Although the CloudFormation provides the default values of a test channel's playback URL and a test backend's Gateway API, you can still customize them in *.js/config.js*,:
 
 - ```"PlaybackURL":``` an IVS live channel (or VOD title)'s playback URL;
 
@@ -85,14 +95,17 @@ In *.js/config.js*, replace the default values with the playback URL of your IVS
 ### 3.1 Playback QoS Events
 
 #### 3.1.1 Submission Frequency and Metrics Covered
+The QoS events are designed as:
 
-Each player QoS event
+- Each player QoS event (PLAY, STOP, PLAYBACK_SUMMARY, QUALITY_CHANGED) is about one viewer watching one particular channel (i.e., one playback session);
 
-- is about one viewer watching one particular channel; and
+- There is only one PLAY event and one STOP event for one playback session;
 
-- covers maximum one minute (which is adjustable, and is a tradeoff between latency and cost).
+- There can be multiple PLAYBACK_SUMMARY events for a playback session, which event covers maximum one minute (such a duration is adjustable, and is a tradeoff between latency and cost);
 
-Furthermore, if the player state is either “IDLE” or “ENDED” throughout the entire minute, no event will be sent for this minute.
+- If the player state is either “IDLE” or “ENDED” throughout the entire minute, no PLAYBACK_SUMMARY event will be sent for this minute;
+
+- There can be multiple QUALITY_CHANGED events for a playback session.
 
 The data collected within the QoS events can be leveraged to generate two types of metrics:
 
@@ -102,7 +115,11 @@ The data collected within the QoS events can be leveraged to generate two types 
 
   - Client platform type;
 
-  - Duration watched.
+  - Distribution of playback start time (per channel) - could be useful for content platform to improve the viewership of a channel;
+
+  - Distribution of playback end time (per channel) - could be useful for content platform to improve the viewership of a channel;
+
+  - Duration watched (per channel).
 
 - QoS
 
@@ -112,28 +129,86 @@ The data collected within the QoS events can be leveraged to generate two types 
 
   - Live latency (delay from ingest to playback, i.e., end-to-end latency excluding the broadcast tool's latency);
 
-  - Playback buffering;
+  - Playback buffering % (ratio between buffer time and (playing time + buffering time));
 
-  - Playback errors.
+  - Playback buffering count;
+
+  - Playback errors;
+
+  - Viewer's location.
 
 #### 3.1.2 JSON Schema
+
+##### 3.1.2.1 PLAY
+
+| Field Name | Data Type | Note |
+| ---------- | --------- | ---- |
+|  |  | **// event type (QoS, timed metadata feedback, etc.)** |  
+| metric_type | string | "PLAY" for playback start event |
+|  |  | **// user/session ID** |  
+| user_id | string | UUID of the device |
+| session_id | string | UUID of the playback session |
+|  |  | **// client platform and content** |  
+| client_platform | string | e.g., “web”, “android”, “ios” |
+| is_live | boolean |  |
+| channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
+|  |  | **// startup latency** |
+| startup_latency_ms | integer | latency  in ms from load() being called to state becoming PLAYING for the first time in a playback session |
+
+##### 3.1.2.2 STOP
+
+| Field Name | Data Type | Note |
+| ---------- | --------- | ---- |
+|  |  | **// event type (QoS, timed metadata feedback, etc.)** |  
+| metric_type | string | "STOP" for playback start event |
+|  |  | **// user/session ID** |  
+| user_id | string | UUID of the device |
+| session_id | string | UUID of the playback session |
+|  |  | **// client platform and content** |  
+| client_platform | string | e.g., “web”, “android”, “ios” |
+| is_live | boolean |  |
+| channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
+
+##### 3.1.2.3 PLAYBACK_SUMMARY
 
 | Field Name | Data Type | Note |
 | ---------- | --------- | ---- |
 |  |  | **// event type (QoS, timed metadata feedback, etc.)** |  
 | metric_type | string | "PLAYBACK_SUMMARY" for QoS event |
+|  |  | **// user/session ID** |  
+| user_id | string | UUID of the device |
+| session_id | string | UUID of the playback session |
 |  |  | **// client platform and content** |  
 | client_platform | string | e.g., “web”, “android”, “ios” |
-| channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
 | is_live | boolean |  |
+| channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
 |  |  | **// playback summary** |  
 | error_count | integer |  |
 | playing_time_ms | integer | the duration (in ms) of the player SDK staying in the "PLAYING" state |
 | buffering_time_ms | integer | the duration (in ms) of the player SDK staying in the "BUFFERING" state |
+| buffering_count | integer | how many times does the player SDK enter the "BUFFERING" state in the last minute (or whatever sampling period)|
 | rendition_name | string | e.g., "Source", "720p60", "720p", "480p", "240p", "160p" (snapshot taken right before the event is sent) |
 | rendition_height | integer | (snapshot taken right before the event is sent) |
-| startup_latency_ms | integer | latency  in ms from load() being called to state becoming PLAYING. Value is only valid in the very first event of playing a channel, and is set to 0 in following events, i.e., the 2nd/3rd/... minute of the playback session |
 | live_latency_ms | integer | latency in ms based on "getLiveLatency()" covering the latency from ingest to playback (i.e., not include the latency of broadcast tool), live only. set to -1, if VOD |
+
+##### 3.1.2.4 QUALITY_CHANGED
+
+| Field Name | Data Type | Note |
+| ---------- | --------- | ---- |
+|  |  | **// event type (QoS, timed metadata feedback, etc.)** |  
+| metric_type | string | "QUALITY_CHANGED" for playback start event |
+|  |  | **// user/session ID** |  
+| user_id | string | UUID of the device |
+| session_id | string | UUID of the playback session |
+|  |  | **// client platform and content** |  
+| client_platform | string | e.g., “web”, “android”, “ios” |
+| is_live | boolean |  |
+|  |  | **// rendition change** |  
+| from_rendition_group | string |  |
+| to_rendition_group | string |  |
+| from_rendition_bitrate | integer |  |
+| to_rendition_bitrate | integer |  |
+| step_direction | string | "UP" or "DOWN" |
 
 #### 3.1.3 Implementation
 
@@ -141,11 +216,11 @@ Search for *"QoS event"* in *ivs.js* and see the implementation of the following
 
 - Definition of the work variables, right after the creation of ```IVSPlayer``` (from line 39);
 
-- Send off the dangling QoS event and reset the work variables before loading a new video (from line 147);
+- Send off PLAY, STOP, and update the work variables when player state changes (from line 62, 90, 103, etc.);
 
-- Send off a QoS event and reset some work varibles every minute (from line 186);
+- Send off a PLAYBACK_SUMMARY event and reset some work varibles every minute (from line 198);
 
-- Subroutine of assembing an QoS event and sending it to the QoS dashboard backend (from line 266);
+- Subroutine of assembing an QoS event and sending it to the QoS dashboard backend (from line 265);
 
 - Update work variables (whose values are used in assembing QoS events), when receiving a player-state-change (see below) or playback-error event from the IVS player SDK (from line 57).
 
@@ -198,13 +273,16 @@ When a viewer receives a multiple-choice question and select an answer, an timed
 | ---------- | --------- | ---- |
 |  |  | **// event type (QoS, timed metadata feedback, etc.)** |
 | metric_type | string | "QUIZ_ANSWER" in this example |
-|  |  | **// client platform and content** |
+|  |  | **// user/session ID** |  
+| user_id | string | UUID of the device |
+| session_id | string | UUID of the playback session |
+|  |  | **// timed metadata and viewer feedback** |
 | question | string | e.g., "Which team won the 2019 World Series?" |
 | answer | string | e.g., "Washington Nationals" |
 
 #### 3.2.3 Implementation
 
-Search for *"timed metadata"* in *ivs.js* and see how ```sendQuizAnswer()``` is called and implemented.
+Search for *"timed metadata feedback"* in *ivs.js* and see how ```sendQuizAnswer()``` is called and implemented.
 
 #### 3.2.4 Test Plan
 
