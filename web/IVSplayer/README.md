@@ -74,7 +74,7 @@ When a viewer answers a multiple-choice question, a timed-metadata-feedback even
 
 Furthermore, the sample web player also assembles a playback QoS event and send to the the backend every minute. To see the console output for these events, similar as above,
 
-- Type *"send QS event"* in "Filter";
+- Type *"send QoS event"* in "Filter";
 
 - See the playback QoS events, each of which is a summary of the past minute's playback state (see below).
 
@@ -82,7 +82,7 @@ Furthermore, the sample web player also assembles a playback QoS event and send 
 
 ### 2.3 Customize Your IVS Video Channel and Dashboard Backend
 
-Although the CloudFormation provides the default values of a test channel's playback URL and a test backend's Gateway API, you can still customize them in *.js/config.js*,:
+Although the CloudFormation template in this repo provides the default values of a test channel's playback URL and a test backend's Gateway API, you can still customize them in *.js/config.js*,:
 
 - ```"PlaybackURL":``` an IVS live channel (or VOD title)'s playback URL;
 
@@ -101,7 +101,7 @@ The QoS events are designed as:
 
 - There is only one PLAY event and one STOP event for one playback session;
 
-- There can be multiple PLAYBACK_SUMMARY events for a playback session, which event covers maximum one minute (such a duration is adjustable, and is a tradeoff between latency and cost);
+- There can be multiple PLAYBACK_SUMMARY events for a playback session, which covers a pre-configurated period (e.g., one minute) as a tradeoff between latency and cost;
 
 - If the player state is either “IDLE” or “ENDED” throughout the entire minute, no PLAYBACK_SUMMARY event will be sent for this minute;
 
@@ -109,7 +109,7 @@ The QoS events are designed as:
 
 The data collected within the QoS events can be leveraged to generate two types of metrics:
 
-- User activity:
+- User activities:
 
   - Concurrent viewers;
 
@@ -121,7 +121,7 @@ The data collected within the QoS events can be leveraged to generate two types 
 
   - Duration watched (per channel).
 
-- QoS
+- QoS:
 
   - Rendition watched;
 
@@ -135,7 +135,7 @@ The data collected within the QoS events can be leveraged to generate two types 
 
   - Playback errors;
 
-  - Viewer's location.
+  - Viewer's location (based on his/her IP).
 
 #### 3.1.2 JSON Schema
 

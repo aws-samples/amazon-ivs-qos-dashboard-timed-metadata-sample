@@ -42,7 +42,7 @@ const cardInnerEl = document.getElementById("card-inner");
   var lastPlayerStateREADYTime = -1; // milliseconds since Epoch, UTC, for computing startupLatencyMsOfThisSession
   var lastPlayerState = "";
   var lastPlayerStateUpdateOrPlaybackSummaryEventSentTime = -1; // milliseconds since Epoch, UTC, for computing playing/bufferingTimeMsInLastMinute
-  var lastPlaybackStartOrSummaryEventSentTime = -1; // milliseconds since Epoch, UTC, for the timing of sending playback summary events
+  var lastPlaybackStartOrPlaybackSummaryEventSentTime = -1; // milliseconds since Epoch, UTC, for the timing of sending playback summary events
 
   // payload of events
   var userId = ""; // unique UUID of each device if localStorage is supported, otherwise set to sessionId of each playback session
@@ -102,7 +102,7 @@ const cardInnerEl = document.getElementById("card-inner");
 
     // === Send off playback start event and update QoS event work variables ===
     if (startupLatencyMsOfThisSession == 0) { // the very beginning of a playback session
-      lastPlaybackStartOrSummaryEventSentTime = Date.now();
+      lastPlaybackStartOrPlaybackSummaryEventSentTime = Date.now();
       startupLatencyMsOfThisSession = Date.now() - lastPlayerStateREADYTime;
       sendPlaybackStartEvent(sendQoSEventUrl);
 
@@ -115,7 +115,9 @@ const cardInnerEl = document.getElementById("card-inner");
         //   and selects a different rendiion after the rebuffering
         let newQuality = player.getQuality();
         if (lastQuality.bitrate != newQuality.bitrate) {
-          console.log("Quality changed from", lastQuality.name, "to", newQuality.name);
+          console.log(
+            `Quality changed from "${lastQuality.name}" to "${newQuality.name}".`
+          );
           sendQualityChangedEvent(sendQoSEventUrl, lastQuality, newQuality);
           lastQuality = newQuality;
         }
@@ -161,7 +163,7 @@ const cardInnerEl = document.getElementById("card-inner");
     // === Update QoS event work variables ===
   });
 
-  // Attach event (quality change) listeners
+  // Attach event (quality changed) listeners
   player.addEventListener(PlayerEventType.QUALITY_CHANGED, function () {
     console.log("PlayerEventType - QUALITY_CHANGED");
 
@@ -169,7 +171,7 @@ const cardInnerEl = document.getElementById("card-inner");
     let newQuality = player.getQuality();
     if (lastQuality.bitrate != newQuality.bitrate) {
       console.log(
-        `PlayerEventType - QUALITY_CHANGED: from "${lastQuality.name}" to "${newQuality.name}".`
+        `Quality changed from "${lastQuality.name}" to "${newQuality.name}".`
       );
       sendQualityChangedEvent(sendQoSEventUrl, lastQuality, newQuality);
       lastQuality = newQuality;
@@ -197,11 +199,11 @@ const cardInnerEl = document.getElementById("card-inner");
 
   // === Send off a QoS event every minute ===
   setInterval(function () {
-    if ((lastPlaybackStartOrSummaryEventSentTime != -1) && ((Date.now() - lastPlaybackStartOrSummaryEventSentTime) > 60000)) {
+    if ((lastPlaybackStartOrPlaybackSummaryEventSentTime != -1) && ((Date.now() - lastPlaybackStartOrPlaybackSummaryEventSentTime) > 60000)) {
       sendPlaybackSummaryEventIfNecessary(sendQoSEventUrl);
 
       // Reset work variables
-      lastPlayerStateUpdateOrPlaybackSummaryEventSentTime = lastPlaybackStartOrSummaryEventSentTime = Date.now();
+      lastPlayerStateUpdateOrPlaybackSummaryEventSentTime = lastPlaybackStartOrPlaybackSummaryEventSentTime = Date.now();
       playingTimeMsInLastMinute = 0;
       bufferingTimeMsInLastMinute = 0;
       bufferingCountInLastMinute = 0;
@@ -302,14 +304,14 @@ const cardInnerEl = document.getElementById("card-inner");
       myJson.client_platform = config.client_platform;
       myJson.is_live = isLiveChannel();
       myJson.channel_watched = getChannelWatched(myJson.is_live);
-      
+
       myJson.startup_latency_ms = startupLatencyMsOfThisSession;
   
       if (url != "") {
         pushPayload(url,myJson);
       }
   
-      console.log("send QoS event - Play ", JSON.stringify(myJson), "to", url);
+      console.log("send QoS event - Play ", JSON.stringify(myJson), " to ", url);
   }
 
   // Send playback end (STOP) event
@@ -328,7 +330,7 @@ const cardInnerEl = document.getElementById("card-inner");
       pushPayload(url,myJson);
     }
 
-    console.log("send QoS event - Stop ", JSON.stringify(myJson), "to", url);
+    console.log("send QoS event - Stop ", JSON.stringify(myJson), " to ", url);
   }
 
   // Send playback QoS summary (PLAYBACK_SUMMARY) event
