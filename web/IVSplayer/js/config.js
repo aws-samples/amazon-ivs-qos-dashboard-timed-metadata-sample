@@ -32,6 +32,6 @@ export const config = {
 //   // end point for sending playback QoS (i.e., playback summary) events
 //   "SendQoSEventURL": "https://d1k3iqt5m1v3ig.cloudfront.net/prod/streams",
 //   // end point for sending timed metadata feedback (e.g., quiz answer) events
-//   "SendQuizAnswerURL":"https://d1k3iqt5m1v3ig.cloudfront.net/prod/streams",
+//   "SendQuizAnswerURL": "https://d1k3iqt5m1v3ig.cloudfront.net/prod/streams",
 //   "client_platform": "web",
 // };
