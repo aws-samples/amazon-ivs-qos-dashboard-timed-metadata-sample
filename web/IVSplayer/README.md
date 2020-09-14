@@ -234,42 +234,56 @@ Test plan:
 
 - #1 Good network condition - Play the test channel under a reliable network condition having >10mbps bandwidth;
 
-- #2 Changing network contiion - Start from unthrottled, then throttle to 1mbps after seeing the 2nd QoS event;
+- #2 Changing network contiion - Start from unthrottled, then throttle to 1mbps after seeing the 2nd PLAYBACK_SUMMARY event;
 
-- #3 Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event.
+- #3 Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd PLAYBACK_SUMMARY event.
 
-Reference test result #1:
+Reference PLAYBACK_SUMMARY result #1:
 
-| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
-| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
-| #1 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
-|    | Following | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+| Event no. | Expected *error_count* | *playing_time_ms* | *buffering_time_ms* | *buffering_count* | *rendition_name* | *rendition_height* | *live_latency_ms* |
+| --------- | ---------------------- | ----------------- | ------------------- | ----------------- | ---------------- | ------------------ | ----------------- |
+| 1 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 2 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 3 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 4 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 5 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 6 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
 
 Reference screenshots of the console output #1:
 
 ![Screenshot of Console Output for Test Case 1](./README_images/section2dot2_2.png)
 
-Reference test result #2:
+Reference PLAYBACK_SUMMARY result #2 (bandwidth throttling starts between the 2nd and the 3rd events):
 
-| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
-| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
-| #2 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
-|    | 2nd       | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
-|    | 3rd       | 0s  | >55s | <5s | 360 | <6s | ~0 |
-|    | 4th       | 0s  | ~60s | ~0s | 360 | <6s | ~0 |
+| Event no. | Expected *error_count* | *playing_time_ms* | *buffering_time_ms* | *buffering_count* | *rendition_name* | *rendition_height* | *live_latency_ms* |
+| --------- | ---------------------- | ----------------- | ------------------- | ----------------- | ---------------- | ------------------ | ----------------- |
+| 1 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 2 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 3 | 0 | <60000 | >0 | >0 | 480p | 480 | >10000 |
+| 4 | 0 | <60000 | >0 | >0 | 480p | 480 | >10000 |
+| 5 | 0 | <60000 | >0 | >0 | 480p | 480 | >10000 |
+| 6 | 0 | <60000 | >0 | >0 | 480p | 480 | >10000 |
+
+Note:
+
+- The IVS team has a measure to handle the excessive latency after buffering, but is not included in the sample player here;
+
+- This example seems to reveal a bug in IVS' ABR algorithm (i.e., the Auto mode). *buffering_count* should become 0 again from the 4th PLAYBACK_SUMMARY event. More investigation is in progress.
 
 Reference screenshots of the console output #2:
 
 ![Screenshot of Console Output for Test Case 2](./README_images/section3dot1dot4_2.png)
 
-Reference test result #3:
+Reference PLAYBACK_SUMMARY result #3 (bandwidth throttling ends between the 2nd and the 3rd events):
 
-| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
-| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
-| #3 | 1st       | ~5s | ~55s | ~0s | 360 | <5s | ~0 |
-|    | 2nd       | 0s  | ~60s | ~0s | 360 | <5s | ~0 |
-|    | 3rd       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
-|    | 4th       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
+| Event no. | Expected *error_count* | *playing_time_ms* | *buffering_time_ms* | *buffering_count* | *rendition_name* | *rendition_height* | *live_latency_ms* |
+| --------- | ---------------------- | ----------------- | ------------------- | ----------------- | ---------------- | ------------------ | ----------------- |
+| 1 | 0 | ~60000 | 0 | 0 | 360p | 360 | <5000 |
+| 2 | 0 | ~60000 | 0 | 0 | 360p | 360 | <5000 |
+| 3 | 0 | <60000 | >0 | >0 | 720p | 720 | <5000 |
+| 4 | 0 | <60000 | >0 | >0 | 720p | 720 | <5000 |
+| 5 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
+| 6 | 0 | ~60000 | 0 | 0 | 720p | 720 | <5000 |
 
 Reference screenshots of the console output #3:
 
