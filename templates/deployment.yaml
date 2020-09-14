@@ -403,7 +403,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ivsqos-github-templates-us-east-1/qos/v0.3/lambda-functions/efb8cc794107ffacf43a5ed8822f09fd
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.3/lambda-functions/698c0eac30f7fc8207007bc12ea03967
       MemorySize: 512
       Environment:
         Variables:
@@ -504,7 +504,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-us-east-1/qos/v0.3/lambda-functions/3f37716c5c6504e7439b9ac1737b4f28
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.3/lambda-functions/045913d2ee84cd01cfd5d3084cc8cca3
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -521,7 +521,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-us-east-1/qos/v0.3/lambda-functions/1e6d27f4cece46744493a19c353a125b
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.3/lambda-functions/b679f0ae10f19e736bf729e30d3e9a87
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -537,7 +537,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-us-east-1/qos/v0.3/lambda-functions/47a765ec9d40016298c89568b4a2480e
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.3/lambda-functions/be1d213775c5a90aa6e30a7c59dfc7be
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -614,7 +614,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-us-east-1/qos/v0.3/lambda-functions/3585e0d632f9b95ad87d743c2c271ff8
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.3/lambda-functions/ed7b96002a80f4a4a242d5969b46d9a1
       MemorySize: 512
       Handler: index.handler
       Role:

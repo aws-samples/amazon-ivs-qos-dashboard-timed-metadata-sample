@@ -296,7 +296,7 @@ const cardInnerEl = document.getElementById("card-inner");
   // Send off the last PLAYBACK_SUMMARY event and the STOP event
   function sendOffLastPlaybackSummaryEventAndPlaybackEndEvent() {
     sendPlaybackSummaryEventIfNecessary(sendQoSEventUrl);
-    sendPlaybackEndEvent(sendQoSEventUrl); 
+    sendPlaybackEndEvent(sendQoSEventUrl);
   }
 
   // Send playback start (PLAY) event
@@ -304,21 +304,21 @@ const cardInnerEl = document.getElementById("card-inner");
       // (Yueshi to do) send out PLAY event, including startupLatencyMsOfThisSession, myJson.startup_latency_ms
       var myJson = {};
       myJson.metric_type = "PLAY";
-  
+
       myJson.user_id = userId;
       myJson.session_id = sessionId;
-      
+
       myJson.client_platform = config.client_platform;
       myJson.is_live = isLiveChannel();
       myJson.channel_watched = getChannelWatched(myJson.is_live);
 
       myJson.start_playback_position_sec = Math.round(player.getPosition());
       myJson.startup_latency_ms = startupLatencyMsOfThisSession;
-  
+
       if (url != "") {
         pushPayload(url,myJson);
       }
-  
+
       console.log("send QoS event - Play ", JSON.stringify(myJson), " to ", url);
   }
 
@@ -373,11 +373,11 @@ const cardInnerEl = document.getElementById("card-inner");
       } else {
         myJson.live_latency_sec = -1;
       }
-  
+
       if (url != "") {
         pushPayload(url,myJson);
       }
-  
+
       console.log("send QoS event - PlaybackSummary ", JSON.stringify(myJson), " to ", url);
     }
   }
