@@ -366,7 +366,7 @@ const cardInnerEl = document.getElementById("card-inner");
       myJson.rendition_name = lastQuality.name;
       myJson.rendition_height = lastQuality.height;
       if (myJson.is_live) {
-        myJson.live_latency_sec = Math.round(player.getLiveLatency());
+        myJson.live_latency_ms = Math.round(player.getLiveLatency()*1000);
       } else {
         myJson.live_latency_sec = -1;
       }

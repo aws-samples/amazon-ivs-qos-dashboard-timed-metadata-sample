@@ -238,24 +238,40 @@ Test plan:
 
 - #3 Changing network contiion - Start from throttled 1mbps, then unthrottle the bandwidth after seeing the 2nd QoS event.
 
-Reference test result:
+Reference test result #1:
 
 | Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
 | --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
 | #1 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
 |    | Following | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
+
+Reference screenshots of the console output #1:
+
+![Screenshot of Console Output for Test Case 1](./README_images/section2dot2_2.png)
+
+Reference test result #2:
+
+| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
+| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
 | #2 | 1st       | ~2s | ~58s | ~0s | 720 | ~3s | ~0 |
 |    | 2nd       | 0s  | ~60s | ~0s | 720 | ~3s | ~0 |
 |    | 3rd       | 0s  | >55s | <5s | 360 | <6s | ~0 |
 |    | 4th       | 0s  | ~60s | ~0s | 360 | <6s | ~0 |
+
+Reference screenshots of the console output #2:
+
+![Screenshot of Console Output for Test Case 2](./README_images/section3dot1dot4_2.png)
+
+Reference test result #3:
+
+| Test Case | Which QoS Event | Expected *startupLatencyMs* | *playingTimeMs* | *bufferingTimeMs* | *renditionHeight* | *LiveLatencyMs* | *errorCount* |
+| --------- | --------------- | --------------------------- | --------------- | ----------------- | --------------- | --------------- | ------------ |
 | #3 | 1st       | ~5s | ~55s | ~0s | 360 | <5s | ~0 |
 |    | 2nd       | 0s  | ~60s | ~0s | 360 | <5s | ~0 |
 |    | 3rd       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
 |    | 4th       | 0s  | ~60s | ~0s | 720 | <5s | ~0 |
 
-Below are the screenshots of the console output for test case 2 & 3, also see section 2.2 for the console output for test case 1.
-
-![Screenshot of Console Output for Test Case 2](./README_images/section3dot1dot4_2.png)
+Reference screenshots of the console output #3:
 
 ![Screenshot of Console Output for Test Case 3](./README_images/section3dot1dot4_3.png)
 
