@@ -303,7 +303,7 @@ const cardInnerEl = document.getElementById("card-inner");
   function sendPlaybackStartEvent(url) {
       // (Yueshi to do) send out PLAY event, including startupLatencyMsOfThisSession, myJson.startup_latency_ms
       var myJson = {};
-      myJson.metric_type = "STOP";
+      myJson.metric_type = "PLAY";
   
       myJson.user_id = userId;
       myJson.session_id = sessionId;
@@ -312,6 +312,7 @@ const cardInnerEl = document.getElementById("card-inner");
       myJson.is_live = isLiveChannel();
       myJson.channel_watched = getChannelWatched(myJson.is_live);
 
+      myJson.start_playback_position_sec = Math.round(player.getPosition());
       myJson.startup_latency_ms = startupLatencyMsOfThisSession;
   
       if (url != "") {
@@ -332,6 +333,8 @@ const cardInnerEl = document.getElementById("card-inner");
     myJson.client_platform = config.client_platform;
     myJson.is_live = isLiveChannel();
     myJson.channel_watched = getChannelWatched(myJson.is_live);
+
+    myJson.end_playback_position_sec = Math.round(player.getPosition());
 
     if (url != "") {
       pushPayload(url,myJson);
@@ -391,8 +394,8 @@ const cardInnerEl = document.getElementById("card-inner");
     myJson.is_live = isLiveChannel();
     myJson.channel_watched = getChannelWatched(myJson.is_live);
 
-    myJson.from_rendition_group = lastQuality.group;
-    myJson.to_rendition_group = newQuality.group;
+    myJson.from_rendition_name = lastQuality.name;
+    myJson.to_rendition_name = newQuality.name;
     myJson.from_bitrate = lastQuality.bitrate;
     myJson.to_bitrate = newQuality.bitrate;
     myJson.step_direction = (newQuality.bitrate > lastQuality.bitrate)? "UP":"DOWN";

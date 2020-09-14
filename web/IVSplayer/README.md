@@ -150,8 +150,9 @@ The data collected within the QoS events can be leveraged to generate two types 
 | client_platform | string | e.g., “web”, “android”, “ios” |
 | is_live | boolean |  |
 | channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
-|  |  | **// startup latency** |
-| startup_latency_ms | integer | latency  in ms from load() being called to state becoming PLAYING for the first time in a playback session |
+|  |  | **// playback position and startup latency** |
+| start_playback_position_sec | integer | start playback position in seconds |
+| startup_latency_ms | integer | latency in ms from load() being called to state becoming PLAYING for the first time in a playback session |
 
 ##### 3.1.2.2 STOP
 
@@ -166,6 +167,8 @@ The data collected within the QoS events can be leveraged to generate two types 
 | client_platform | string | e.g., “web”, “android”, “ios” |
 | is_live | boolean |  |
 | channel_watched | string | the string after ".channel." in the playback URL, e.g., “xhP3ExfcX8ON” for the test channel |
+|  |  | **// playback position** |
+| end_playback_position_sec | integer | end playback position in seconds |
 
 ##### 3.1.2.3 PLAYBACK_SUMMARY
 
@@ -186,7 +189,7 @@ The data collected within the QoS events can be leveraged to generate two types 
 | buffering_time_ms | integer | the duration (in ms) of the player SDK staying in the "BUFFERING" state |
 | buffering_count | integer | how many times does the player SDK enter the "BUFFERING" state in the last minute (or whatever sampling period)|
 | rendition_name | string | e.g., "Source", "720p60", "720p", "480p", "240p", "160p" (snapshot taken right before the event is sent) |
-| rendition_height | integer | (snapshot taken right before the event is sent) |
+| rendition_height | integer | e.g., 1080, 720, 480, 240, 160 (snapshot taken right before the event is sent) |
 | live_latency_ms | integer | latency in ms based on "getLiveLatency()" covering the latency from ingest to playback (i.e., not include the latency of broadcast tool), live only. set to -1, if VOD |
 
 ##### 3.1.2.4 QUALITY_CHANGED
@@ -202,8 +205,8 @@ The data collected within the QoS events can be leveraged to generate two types 
 | client_platform | string | e.g., “web”, “android”, “ios” |
 | is_live | boolean |  |
 |  |  | **// rendition change** |  
-| from_rendition_group | string |  |
-| to_rendition_group | string |  |
+| from_rendition_name | string | e.g., "Source", "720p60", "720p", "480p", "240p", "160p" |
+| to_rendition_name | string | e.g., 1080, 720, 480, 240, 160 |
 | from_rendition_bitrate | integer |  |
 | to_rendition_bitrate | integer |  |
 | step_direction | string | "UP" or "DOWN" |
