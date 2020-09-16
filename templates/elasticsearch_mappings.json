@@ -131,7 +131,7 @@
         "is_live" : {
           "type" : "boolean"
         },
-        "live_latency_sec" : {
+        "live_latency_ms" : {
           "type" : "long"
         },
         "metric_type" : {
@@ -147,6 +147,15 @@
           "type" : "long"
         },
         "question" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "region" : {
           "type" : "text",
           "fields" : {
             "keyword" : {
