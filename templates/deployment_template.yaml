@@ -1216,7 +1216,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
             #set($output = "{ ""DeliveryStreamName"": ""$stageVariables.DeliveryStreamName"", ""Records"": [ ")
             #set($event = "{")
             ## set the timestamp of event to be the time at which the APIGW received the event
-            #set($metric_type = $input.path('$.detail.event_name').toLowerCase().replaceAll(" ","_"))
+            #set($metric_type = $input.path('$.detail.event_name').toUpperCase().replaceAll(" ","_"))
             #set($event = "$event""metric_type"":""$metric_type"",")
             #set($channel_watched = $input.path('$.resources')[0].split("/")[1])
             #set($event = "$event""channel_watched"":""$channel_watched"",")
