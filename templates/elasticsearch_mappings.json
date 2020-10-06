@@ -81,7 +81,13 @@
             }
           }
         },
+        "buffering_count" : {
+          "type" : "long"
+        },
         "buffering_time_ms" : {
+          "type" : "long"
+        },
+        "channel_count" : {
           "type" : "long"
         },
         "channel_watched" : {
@@ -102,6 +108,18 @@
             }
           }
         },
+        "current_count" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "duration" : {
+          "type" : "long"
+        },
         "error_count" : {
           "type" : "long"
         },
@@ -120,6 +138,15 @@
           "type" : "long"
         },
         "from_rendition_group" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "from_rendition_name" : {
           "type" : "text",
           "fields" : {
             "keyword" : {
@@ -185,6 +212,15 @@
             }
           }
         },
+        "start_playback_position_sec" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
         "startup_latency_ms" : {
           "type" : "long"
         },
@@ -201,6 +237,15 @@
           "type" : "long"
         },
         "to_rendition_group" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "to_rendition_name" : {
           "type" : "text",
           "fields" : {
             "keyword" : {

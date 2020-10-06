@@ -1,0 +1,31 @@
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+## @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+## @type: DataSource
+## @args: [database = "ivsqosv03_qos_db", table_name = "player_logs", transformation_ctx = "DataSource0"]
+## @return: DataSource0
+## @inputs: []
+DataSource0 = glueContext.create_dynamic_frame.from_catalog(database = "ivsqosv03_qos_db", table_name = "player_logs", transformation_ctx = "DataSource0")
+## @type: SelectFields
+## @args: [paths = ["session_id", "metric_type", "channel_watched", "event_time"], transformation_ctx = "Transform0"]
+## @return: Transform0
+## @inputs: [frame = DataSource0]
+Transform0 = SelectFields.apply(frame = DataSource0, paths = ["session_id", "metric_type", "channel_watched", "event_time"], transformation_ctx = "Transform0")
+## @type: DataSink
+## @args: [connection_type = "s3", format = "json", connection_options = {"path": "s3://ivsqosv03-logs-444603092185-eu-west-1/etl_logs/", "partitionKeys": []}, transformation_ctx = "DataSink0"]
+## @return: DataSink0
+## @inputs: [frame = Transform0]
+DataSink0 = glueContext.write_dynamic_frame.from_options(frame = Transform0, connection_type = "s3", format = "json", connection_options = {"path": "s3://ivsqosv03-logs-444603092185-eu-west-1/etl_logs/", "partitionKeys": []}, transformation_ctx = "DataSink0")
+job.commit()

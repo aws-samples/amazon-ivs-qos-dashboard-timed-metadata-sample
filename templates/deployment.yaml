@@ -6,10 +6,10 @@ Mappings:
   SourceCodeBucket:
     General:
       S3Bucket: ganeshji-sfqos
-      LambdaUIDeploymentCodePrefix: qos/v03/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/v03/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/v03/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/v03/lambda-functions/add-partition-function
+      LambdaUIDeploymentCodePrefix: qos/v05/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/v05/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/v05/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/v05/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   PlaybackURL:
@@ -301,13 +301,15 @@ Resources:
             Type: int
           - Name: buffering_time_ms
             Type: int
+          - Name: buffering_count
+            Type: int
           - Name: rendition_name
             Type: string
           - Name: rendition_height
             Type: int
           - Name: startup_latency_ms
             Type: int
-          - Name: live_latency_sec
+          - Name: live_latency_ms
             Type: int
           - Name: event_time
             Type: timestamp
@@ -403,7 +405,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v03/lambda-functions/00324c86a792fa9a742919e0ecbbad02
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/57394ee832df998311a368c5d2a918db
       MemorySize: 512
       Environment:
         Variables:
@@ -504,7 +506,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v03/lambda-functions/045913d2ee84cd01cfd5d3084cc8cca3
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/653add4b7bb37cc4ff32ae87ab49874e
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -518,10 +520,63 @@ Resources:
           BUCKET_VALIDATION_DEFS:
             Ref: PlayerLogsBucket
           BUCKET_VALIDATION_FILE: /record/validations.json
+  EventBridgeHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/450b668e6516080abba1566d7d6f341c
+      MemorySize: 128
+      Handler: function.handler
+      Role:
+        Fn::GetAtt:
+        - EventBridgeHandlerFunctionRole
+        - Arn
+      Timeout: 60
+      Runtime: python3.8
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination:
+              Fn::Sub: arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+  EventBridgeHandlerFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /service-role/
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: CustomPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action: events:PutEvents
+            Effect: Allow
+            Resource:
+              Fn::Sub: arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/*
+          - Action:
+            - ssm:PutParameter
+            - ssm:DeleteParameter
+            - ssm:GetParameterHistory
+            - ssm:GetParametersByPath
+            - ssm:GetParameters
+            - ssm:GetParameter
+            - ssm:DeleteParameters
+            Effect: Allow
+            Resource:
+              Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v03/lambda-functions/1f3f27971e732bc3e66bfd6d21d34aac
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/31b1ce9c63a2e66961b294a21f08134b
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -537,7 +592,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v03/lambda-functions/a1b418274f98be7f17d2e2e0f98d7d75
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/faeb8a3ce6bf47ea51d993cbb3c71157
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -614,7 +669,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v03/lambda-functions/c79bce02fef1c259dfff95c67daba649
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/da6da17d850e40936e3ccb58b3a30499
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -941,8 +996,8 @@ Resources:
         \ where \"metric_type\"='PLAYBACK_SUMMARY' \n GROUP BY \"client_platform\"\
         , \n STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n UNION\
         \ ALL \n -- live latency \n SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\"\
-        , AVG(\"live_latency_sec\") \n FROM     \"SOURCE_SQL_STREAM_001\" where \"\
-        metric_type\"='PLAYBACK_SUMMARY' \n GROUP BY \"client_platform\", \n STEP(\"\
+        , AVG(\"live_latency_ms\")/1000 \n FROM     \"SOURCE_SQL_STREAM_001\" where\
+        \ \"metric_type\"='PLAYBACK_SUMMARY' \n GROUP BY \"client_platform\", \n STEP(\"\
         SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n -- concurrent\
         \ users \n CREATE OR REPLACE PUMP stream_pump AS \n INSERT INTO PLAYER_STATS\
         \ \n SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"\
@@ -982,6 +1037,9 @@ Resources:
           - Name: buffering_time_ms
             SqlType: BIGINT
             Mapping: $.buffering_time_ms
+          - Name: buffering_count
+            SqlType: BIGINT
+            Mapping: $.buffering_count
           - Name: rendition_name
             SqlType: VARCHAR(20)
             Mapping: $.rendition_name
@@ -991,9 +1049,9 @@ Resources:
           - Name: startup_latency_ms
             SqlType: BIGINT
             Mapping: $.startup_latency_ms
-          - Name: live_latency_sec
+          - Name: live_latency_ms
             SqlType: BIGINT
-            Mapping: $.live_latency_sec
+            Mapping: $.live_latency_ms
           - Name: question
             SqlType: VARCHAR(50)
             Mapping: $.question
@@ -1169,8 +1227,8 @@ Resources:
           application/json:
             Fn::Sub:
             - "#set($non_string_attrs=[\"is_live\",\"error_count\",\"playing_time_ms\"\
-              ,\"buffering_time_ms\",\"rendition_height\",\"startup_latency_ms\",\"\
-              live_latency_sec\",\"from_bitrate\",\"to_bitrate\",\"CloudFront-Is-SmartTV-Viewer\"\
+              ,\"buffering_time_ms\",\"buffering_count\",\"rendition_height\",\"startup_latency_ms\"\
+              ,\"live_latency_ms\",\"from_bitrate\",\"to_bitrate\",\"CloudFront-Is-SmartTV-Viewer\"\
               ,\"CloudFront-Is-Tablet-Viewer\",\"CloudFront-Is-Mobile-Viewer\",\"\
               CloudFront-Is-Desktop-Viewer\"])\n#set($header_params=[\"CloudFront-Viewer-Country-Name\"\
               ,\"CloudFront-Viewer-City\",\"CloudFront-Viewer-Latitude\",\"CloudFront-Viewer-Longitude\"\
@@ -1309,20 +1367,25 @@ Resources:
         RequestTemplates:
           application/json:
             Fn::Sub:
-            - "## read the Data element from event payload\n#set($inputjson = $input.path('$'))\n\
+            - "#set($non_string_attrs=[\"duration\",\"channel_count\"])\n## read the\
+              \ Data element from payload\n#set($inputjson = $input.path('$.detail.responsePayload'))\n\
               ## set the Delivery Stream Kinesis Firehose stream name\n#set($output\
               \ = \"{ \"\"DeliveryStreamName\"\": \"\"$stageVariables.DeliveryStreamName\"\
-              \", \"\"Records\"\": [ \")\n#set($event = \"{\")\n## set the timestamp\
-              \ of event to be the time at which the APIGW received the event\n#set($metric_type\
-              \ = $input.path('$.detail.event_name').toLowerCase().replaceAll(\" \"\
-              ,\"_\"))\n#set($event = \"$event\"\"metric_type\"\":\"\"$metric_type\"\
-              \",\")\n#set($channel_watched = $input.path('$.resources')[0].split(\"\
-              /\")[1])\n#set($event = \"$event\"\"channel_watched\"\":\"\"$channel_watched\"\
-              \",\")\n#set($event = \"$event\"\"region\"\":\"\"$input.path('$.region')\"\
-              \",\")\n#set($event = \"$event\"\"event_time\"\":$context.requestTimeEpoch\"\
-              )\n#set($event = \"$event}\")\n## encode to base64 for delivery\n#set($payload\
-              \ = \"{\"\"Data\"\":\"\"$util.base64Encode($event)\"\"}\")\n#set($output\
-              \ = \"$output$payload\")\n#set($output = \"$output]}\")\n$output\n"
+              \", \"\"Records\"\": [ \")\n## for each payload event do the following\n\
+              #foreach($elem in $inputjson)\n  #set($event = \"{\")\n  ## read the\
+              \ attributes of the json object dynamically\n  #foreach($attr in $elem.keySet())\n\
+              \      ## check if this is string type attr or not. Accordingly use\
+              \ \"\" around values\n      #if($non_string_attrs.contains($attr))\n\
+              \        #set($prop = \"\"\"$attr\"\":$elem.get($attr),\")\n      #else\n\
+              \        #set($prop = \"\"\"$attr\"\":\"\"$elem.get($attr)\"\",\")\n\
+              \      #end\n      #set($event = \"$event$prop\")\n  #end\n  ## set\
+              \ the timestamp of event to be the time at which the APIGW received\
+              \ the event\n  #set($event = \"$event\"\"event_time\"\":$context.requestTimeEpoch\"\
+              )\n  #set($event = \"$event}\")\n  ## encode to base64 for delivery\n\
+              \  #set($payload = \"{\"\"Data\"\":\"\"$util.base64Encode($event)\"\"\
+              }\")\n  #set($output = \"$output$payload\")\n  #if($foreach.hasNext)\n\
+              \      #set($output = \"$output,\")\n  #end\n  #end\n  #set($output\
+              \ = \"$output]}\")\n  $output\n"
             - DeliveryStreamName:
                 Fn::If:
                 - PushToElasticSearchCondition
@@ -1372,6 +1435,31 @@ Resources:
           Principal:
             Service:
             - events.amazonaws.com
+  IVSQoSCronStatusUpdateHandlerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: EventBridge Rule to periodically publish event metrics from SSM
+        into event streams for reporting
+      State: ENABLED
+      ScheduleExpression: rate(1 minute)
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - EventBridgeHandlerFunction
+          - Arn
+        Id: IVSQoSLambdaId
+        Input: "{\"detail\":{\"event_name\":\"STATUS_UPDATE\"}}\n"
+  IVSQoSCronStatusUpdateHandlerRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: EventBridgeHandlerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - EventBridgeHandlerFunction
+        - Arn
   IVSQoSEventBridgeRule:
     Type: AWS::Events::Rule
     Properties:
@@ -1383,6 +1471,23 @@ Resources:
         detail-type:
         - IVS Stream State Change
         - IVS Stream Health Change
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - EventBridgeHandlerFunction
+          - Arn
+        Id: IVSQoSLambdaId
+  IVSQoSLambdaRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Lambda Rule to publish events when EventBridgeLambda function sends
+        data to destinations
+      State: ENABLED
+      EventPattern:
+        source:
+        - lambda
+        detail-type:
+        - Lambda Function Invocation Result - Success
       Targets:
       - Arn:
           Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${EventIngestApi}/prod/POST/eb-streams

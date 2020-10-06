@@ -17,7 +17,7 @@
  */
 
 import {config} from "./config.js"; // see comments in config.js for the purposes of the URLs
-const playbackUrl = config.PlaybackURL;
+var playbackUrl = config.PlaybackURL;
 const sendQoSEventUrl = config.SendQoSEventURL;
 const sendQuizAnswerUrl = config.SendQuizAnswerURL;
 
@@ -417,7 +417,10 @@ const cardInnerEl = document.getElementById("card-inner");
     if (live) {
       var myIndex1 = playbackUrl.indexOf("channel.") + 8;
       var myIndex2 = playbackUrl.indexOf(".m3u8");
-      return playbackUrl.substring(myIndex1, myIndex2);
+      var channelName = playbackUrl.substring(myIndex1, myIndex2);
+      console.log("playbackUrl ",playbackUrl);
+      console.log("Channel name :",channelName);
+      return channelName;
     } else {
       return playbackUrl;
     }
@@ -464,5 +467,23 @@ const cardInnerEl = document.getElementById("card-inner");
     });
   }
   // === subroutines for sending QoS events and timed metadata events ===
+
+  var mySelect = $('#playback_url');
+  var playbackUrls = config.PlaybackURLs.split(",");
+  $.each(playbackUrls, function(val, text) {
+
+    mySelect.append(
+        $('<option></option>').val(text).html(text.substring(text.lastIndexOf("/")+1))
+    );
+  });
+
+  $('#playVideo').click(function () {
+    var selectedPlaybackUrl = $('#playback_url option:selected').val();
+    console.log("PlaybackURL :",selectedPlaybackUrl);
+    player.pause();
+    player.load(selectedPlaybackUrl);
+    playbackUrl = selectedPlaybackUrl;
+    player.play();
+  });
 
 })(window.IVSPlayer);
