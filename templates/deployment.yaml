@@ -5,11 +5,11 @@ Description: IVS QoS Dashboard Backend - Includes sample player with event captu
 Mappings:
   SourceCodeBucket:
     General:
-      S3Bucket: ganeshji-sfqos
-      LambdaUIDeploymentCodePrefix: qos/v05/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/v05/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/v05/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/v05/lambda-functions/add-partition-function
+      S3Bucket: ivsqos-github-templates
+      LambdaUIDeploymentCodePrefix: qos/v0.5/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/v0.5/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/v0.5/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/v0.5/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   PlaybackURL:
@@ -405,7 +405,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/57394ee832df998311a368c5d2a918db
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/9c8e30cf0f49bb21c918830fb0f6aabf
       MemorySize: 512
       Environment:
         Variables:
@@ -506,7 +506,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/653add4b7bb37cc4ff32ae87ab49874e
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/6847ef694059e347be04c8a704d66cef
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -523,7 +523,7 @@ Resources:
   EventBridgeHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/450b668e6516080abba1566d7d6f341c
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/ae5ebbc8fcdb2291c9c0f7926db0bf52
       MemorySize: 128
       Handler: function.handler
       Role:
@@ -576,7 +576,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/31b1ce9c63a2e66961b294a21f08134b
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/2fadc80c9c0a0439898412bcfd449fd2
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -592,7 +592,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/faeb8a3ce6bf47ea51d993cbb3c71157
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/cd443ee09f90e9be714a46b4015a87e8
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -669,7 +669,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/da6da17d850e40936e3ccb58b3a30499
+      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/5f14d66061a2c72b98b07b5b47e16c5f
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -1447,7 +1447,7 @@ Resources:
           Fn::GetAtt:
           - EventBridgeHandlerFunction
           - Arn
-        Id: IVSQoSLambdaId
+        Id: IVSQoSLambdaId1
         Input: "{\"detail\":{\"event_name\":\"STATUS_UPDATE\"}}\n"
   IVSQoSCronStatusUpdateHandlerRulePermission:
     Type: AWS::Lambda::Permission
@@ -1458,7 +1458,7 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn:
         Fn::GetAtt:
-        - EventBridgeHandlerFunction
+        - IVSQoSCronStatusUpdateHandlerRule
         - Arn
   IVSQoSEventBridgeRule:
     Type: AWS::Events::Rule
@@ -1476,7 +1476,18 @@ Resources:
           Fn::GetAtt:
           - EventBridgeHandlerFunction
           - Arn
-        Id: IVSQoSLambdaId
+        Id: IVSQoSLambdaId2
+  IVSQoSEventBridgeRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: EventBridgeHandlerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - IVSQoSEventBridgeRule
+        - Arn
   IVSQoSLambdaRule:
     Type: AWS::Events::Rule
     Properties:

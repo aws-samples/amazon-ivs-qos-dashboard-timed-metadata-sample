@@ -1,4 +1,4 @@
-{
+ {
       "properties" : {
         "CloudFront-Is-Desktop-Viewer" : {
           "type" : "text",
@@ -120,6 +120,15 @@
         "duration" : {
           "type" : "long"
         },
+        "end_playback_position_sec" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
         "error_count" : {
           "type" : "long"
         },
@@ -160,6 +169,15 @@
         },
         "live_latency_ms" : {
           "type" : "long"
+        },
+        "live_latency_sec" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
         },
         "metric_type" : {
           "type" : "text",

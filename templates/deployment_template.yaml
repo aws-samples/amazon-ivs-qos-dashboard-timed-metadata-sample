@@ -617,6 +617,7 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AddPartitionScheduledRule.Arn
+      SourceAccount: !Sub ${AWS::AccountId}
 
   PlayerLogsBucket:
     Type: AWS::S3::Bucket
@@ -1345,7 +1346,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Targets:
         -
           Arn: !GetAtt EventBridgeHandlerFunction.Arn
-          Id: 'IVSQoSLambdaId'
+          Id: 'IVSQoSLambdaId1'
           Input: |
             {"detail":{"event_name":"STATUS_UPDATE"}}
 
@@ -1355,7 +1356,8 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       FunctionName: !Ref EventBridgeHandlerFunction
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
-      SourceArn: !GetAtt EventBridgeHandlerFunction.Arn
+      SourceArn: !GetAtt IVSQoSCronStatusUpdateHandlerRule.Arn
+      SourceAccount: !Sub ${AWS::AccountId}
 
   IVSQoSEventBridgeRule:
     Type: AWS::Events::Rule
@@ -1366,7 +1368,16 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Targets:
         -
           Arn: !GetAtt EventBridgeHandlerFunction.Arn
-          Id: 'IVSQoSLambdaId'
+          Id: 'IVSQoSLambdaId2'
+
+  IVSQoSEventBridgeRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EventBridgeHandlerFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt IVSQoSEventBridgeRule.Arn
+      SourceAccount: !Sub ${AWS::AccountId}
 
   IVSQoSLambdaRule:
     Type: AWS::Events::Rule

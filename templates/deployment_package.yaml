@@ -5,11 +5,11 @@ Description: IVS QoS Dashboard Backend - Includes sample player with event captu
 Mappings:
     SourceCodeBucket:
       General:
-        S3Bucket: 'ganeshji-sfqos'
-        LambdaUIDeploymentCodePrefix: 'qos/v05/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/v05/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/v05/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/v05/lambda-functions/add-partition-function'
+        S3Bucket: 'ivsqos-github-templates'
+        LambdaUIDeploymentCodePrefix: 'qos/v0.5/lambda-functions/ui-deployment'
+        PlayerSummaryCWCodePrefix: 'qos/v0.5/lambda-functions/playersummary-cw-function'
+        QuizSummaryCWCodePrefix: 'qos/v0.5/lambda-functions/quizsummary-cw-function'
+        AddPartitionFunctionCodePrefix: 'qos/v0.5/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
 
 Parameters:
@@ -1345,7 +1345,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Targets:
         -
           Arn: !GetAtt EventBridgeHandlerFunction.Arn
-          Id: 'IVSQoSLambdaId'
+          Id: 'IVSQoSLambdaId1'
           Input: |
             {"detail":{"event_name":"STATUS_UPDATE"}}
 
@@ -1355,7 +1355,7 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       FunctionName: !Ref EventBridgeHandlerFunction
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
-      SourceArn: !GetAtt EventBridgeHandlerFunction.Arn
+      SourceArn: !GetAtt IVSQoSCronStatusUpdateHandlerRule.Arn
 
   IVSQoSEventBridgeRule:
     Type: AWS::Events::Rule
@@ -1366,7 +1366,15 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Targets:
         -
           Arn: !GetAtt EventBridgeHandlerFunction.Arn
-          Id: 'IVSQoSLambdaId'
+          Id: 'IVSQoSLambdaId2'
+
+  IVSQoSEventBridgeRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EventBridgeHandlerFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt IVSQoSEventBridgeRule.Arn
 
   IVSQoSLambdaRule:
     Type: AWS::Events::Rule
