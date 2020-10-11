@@ -1357,7 +1357,6 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt IVSQoSCronStatusUpdateHandlerRule.Arn
-      SourceAccount: !Sub ${AWS::AccountId}
 
   IVSQoSEventBridgeRule:
     Type: AWS::Events::Rule
@@ -1377,7 +1376,6 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt IVSQoSEventBridgeRule.Arn
-      SourceAccount: !Sub ${AWS::AccountId}
 
   IVSQoSLambdaRule:
     Type: AWS::Events::Rule

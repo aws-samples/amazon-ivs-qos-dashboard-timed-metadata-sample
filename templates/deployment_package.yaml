@@ -617,6 +617,7 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AddPartitionScheduledRule.Arn
+      SourceAccount: !Sub ${AWS::AccountId}
 
   PlayerLogsBucket:
     Type: AWS::S3::Bucket

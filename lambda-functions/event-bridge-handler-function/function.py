@@ -6,6 +6,7 @@ import time
 ssm = boto3.client('ssm')
 
 startvation_prefix = "STARVATION/"
+concurrency_key = "CHANNEL_CONCURRENCY"
 
 def normalise_string(str):
     return str.replace(" ", "_").upper()
@@ -29,12 +30,14 @@ def handler(event, context):
         return container
 
     # for other possible events we compute concurrency, starvation time, broadcast time and fire the event types
+
+    channel_name = parse_channel_name(event["resources"][0])
+
     payload = {}
     payload['metric_type'] = metric_type
     payload['channel_watched'] = channel_name
     payload['region'] = event["region"]
 
-    channel_name = parse_channel_name(event["resources"][0])
     print("Channel Name :%{}", channel_name)
     print("metricType :{}".format(metric_type))
 
@@ -74,7 +77,7 @@ def handler(event, context):
 # prepare channel concurrency event
 def prepare_concurrency_metric(live_count):
     payload = {}
-    payload['metric_type'] = "CHANNEL_CONCURRENCY"
+    payload['metric_type'] = concurrency_key
     payload['channel_count'] = live_count
     return payload
 
@@ -90,7 +93,6 @@ def update_channel_concurrency(increment):
     return live_count
 
 def get_channnel_concurrency():
-    concurrency_key = "CONCURRENCY"
     concurrency = int(get_metric(concurrency_key))
     return concurrency
 
