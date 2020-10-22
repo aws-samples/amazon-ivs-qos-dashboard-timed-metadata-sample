@@ -496,6 +496,19 @@ Resources:
               Service:
                 - lambda.amazonaws.com
 
+  QuizMasterFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: ../dist/quiz-master-function.zip
+      MemorySize: 512
+      Handler: main
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300
+      Runtime: go1.x
+      Environment:
+        Variables:
+          CHANNEL_ARNS: !Sub ${AWS::StackName}-QoS
+
   PlayerSummaryCWFunction:
     Type: 'AWS::Serverless::Function'
     Properties:

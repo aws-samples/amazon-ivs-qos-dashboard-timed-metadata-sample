@@ -408,8 +408,12 @@ const cardInnerEl = document.getElementById("card-inner");
   }
 
   // Check whether the video being played is live or VOD
+  // For now it is hardcorded to return 'true' always
+  // VOD to be supported in future
   function isLiveChannel(){
-    return (player.getDuration() == Infinity);
+
+    // return (player.getDuration() == Infinity);
+    return true;
   }
 
   // Parse and get the Channel watched from the Playback URL
@@ -473,7 +477,7 @@ const cardInnerEl = document.getElementById("card-inner");
   $.each(playbackUrls, function(val, text) {
 
     mySelect.append(
-        $('<option></option>').val(text).html(text.substring(text.lastIndexOf("/")+1))
+        $('<option></option>').val(text).html(text.substring(text.lastIndexOf("channel")+8))
     );
   });
 
@@ -481,9 +485,11 @@ const cardInnerEl = document.getElementById("card-inner");
     var selectedPlaybackUrl = $('#playback_url option:selected').val();
     console.log("PlaybackURL :",selectedPlaybackUrl);
     player.pause();
-    player.load(selectedPlaybackUrl);
-    playbackUrl = selectedPlaybackUrl;
-    player.play();
+    if(selectedPlaybackUrl){
+      player.load(selectedPlaybackUrl);
+      playbackUrl = selectedPlaybackUrl;
+      player.play();
+    }
   });
 
 })(window.IVSPlayer);

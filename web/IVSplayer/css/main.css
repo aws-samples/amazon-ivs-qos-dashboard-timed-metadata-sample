@@ -311,3 +311,9 @@ h2 {
   font-size: 18px;
   color: #d5dbdb;
 }
+
+.spacer{
+  height:20px;
+  width: 100%;
+  display: block;
+}

@@ -5,11 +5,11 @@ Description: IVS QoS Dashboard Backend - Includes sample player with event captu
 Mappings:
   SourceCodeBucket:
     General:
-      S3Bucket: ivsqos-github-templates
-      LambdaUIDeploymentCodePrefix: qos/v0.5/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/v0.5/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/v0.5/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/v0.5/lambda-functions/add-partition-function
+      S3Bucket: ganeshji-sfqos
+      LambdaUIDeploymentCodePrefix: qos/v05/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/v05/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/v05/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/v05/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   PlaybackURL:
@@ -405,7 +405,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/4d7eaea87cd02e22a8ec3deff69dd9d0
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/4d7eaea87cd02e22a8ec3deff69dd9d0
       MemorySize: 512
       Environment:
         Variables:
@@ -506,7 +506,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/6847ef694059e347be04c8a704d66cef
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/6847ef694059e347be04c8a704d66cef
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -523,7 +523,7 @@ Resources:
   EventBridgeHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/ae5ebbc8fcdb2291c9c0f7926db0bf52
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/f15e51c1e1cc87391510c5b2312341fb
       MemorySize: 128
       Handler: function.handler
       Role:
@@ -573,10 +573,26 @@ Resources:
           Principal:
             Service:
             - lambda.amazonaws.com
+  QuizMasterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/ddbc01357ec111700d758791549deb93
+      MemorySize: 512
+      Handler: main
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Timeout: 300
+      Runtime: go1.x
+      Environment:
+        Variables:
+          CHANNEL_ARNS:
+            Fn::Sub: ${AWS::StackName}-QoS
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/6273878648fc9a975fc57bde31889d8a
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/6273878648fc9a975fc57bde31889d8a
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -592,7 +608,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/d0f1dd986db4ab6fe220acd56fe8a731
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/d0f1dd986db4ab6fe220acd56fe8a731
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -669,7 +685,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.5/lambda-functions/d3639ad89000bfbfc0036926602e905e
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/qos/v05/lambda-functions/d3639ad89000bfbfc0036926602e905e
       MemorySize: 512
       Handler: index.handler
       Role:

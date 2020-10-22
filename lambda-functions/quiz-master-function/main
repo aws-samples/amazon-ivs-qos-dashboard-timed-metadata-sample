@@ -1,0 +1,74 @@
+package game
+
+import (
+        "log"
+        "github.com/aws/aws-lambda-go/lambda"
+        "github.com/aws/aws-sdk-go/aws/session"
+        "github.com/aws/aws-sdk-go/service/ivs"
+        "github.com/aws/aws-sdk-go/aws"
+        "encoding/json"
+        "fmt"
+        "os"
+        "strconv"
+)
+
+var QUESTIONS = map[int]map[string]string{
+	0: map[string]string{
+		"question": "From 1971-1997, the Democratic Republic of Congo was known as what?",
+		"A":        "Zaire",
+		"B":        "Angola",
+		"C":        "Rhodesia",
+		"D":        "Belgian Congo",
+		"answer":   "A",
+	},
+	1: map[string]string{
+		"question": "From what language does the term R.S.V.P. originate from?",
+		"A":        "Russian",
+		"B":        "Italian",
+		"C":        "French",
+		"D":        "Portuguese",
+		"answer":   "C",
+	},
+	2: map[string]string{
+		"question": "How many keys are there on a standard piano?",
+		"A":        "20",
+		"B":        "54",
+		"C":        "100",
+		"D":        "88",
+		"answer":   "D",
+	},
+	3: map[string]string{
+		"question": "In which year did the Great Depression begin?",
+		"A":        "1884",
+		"B":        "1929",
+		"C":        "1931",
+		"D":        "1915",
+		"answer":   "B",
+	},
+}
+
+type QuizDemo struct {
+        IVS  ivsiface.IVSAPI
+        Channel string
+}
+
+func (q *QuizDemo) sendQuestion(ctx context.Context) {
+        qIndex := rand.Intn(len(QUESTIONS))
+        qBytes, _ := json.Marshal(QUESTIONS[qIndex])
+        q.IVS.PutMetadataWithContext(ctx, &ivs.PutMetadataInput{
+                 ChannelArn: aws.String(q.Channel),
+                 Metadata: aws.String(string(qBytes)),
+        })
+}
+
+func HandleRequest(ctx context.Context, name MyEvent) (string, error) {
+      var q QuizDemo    // a == Student{"", 0}
+      a.IVS = "Alice" // a == Student{"Alice", 0}
+      q.Channel = "arn:aws:ivs:eu-west-1:444603092185:channel/tbHb69cdvlbk"
+      sendQuestion(q)
+      return fmt.Sprintf("Hello %s!", name.Name ), nil
+}
+
+func main() {
+        lambda.Start(HandleRequest)
+}
