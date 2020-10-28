@@ -895,7 +895,7 @@ SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency
 -- concurrent users \n
 CREATE OR REPLACE PUMP stream_pump AS \n
 INSERT INTO PLAYER_STATS \n
-SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"user_id\") AS unique_count \n
+SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"session_id\") AS unique_count \n
   FROM ( \n
     SELECT STREAM DISTINCT rowtime as window_time, \n
       \"client_platform\", \n
