@@ -42,9 +42,9 @@ The solution is deployed using an AWS CloudFormation template with AWS Lambda ba
 
 | AWS Region | AWS CloudFormation Template URL |
 |:-----------|:----------------------------|
-| EU (Ireland) |<a href="https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-eu-west-1.s3-eu-west-1.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
-| US (N.Virginia) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-east-1.s3.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
-| US (Oregon) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-west-2.s3-us-west-2.amazonaws.com%2Fqos%2Fv0.3%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| EU (Ireland) |<a href="https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-eu-west-1.s3-eu-west-1.amazonaws.com%2Fqos%2Fv0.4%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| US (N.Virginia) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-east-1.s3.amazonaws.com%2Fqos%2Fv0.4%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
+| US (Oregon) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-west-2.s3-us-west-2.amazonaws.com%2Fqos%2Fv0.4%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
 
 ## High level solution components
 ![Solution Components](./docs/images/solution_components.png)

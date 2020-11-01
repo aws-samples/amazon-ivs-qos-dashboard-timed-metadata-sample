@@ -6,10 +6,10 @@ Mappings:
     SourceCodeBucket:
       General:
         S3Bucket: 'ganeshji-sfqos'
-        LambdaUIDeploymentCodePrefix: 'qos/v05/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/v05/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/v05/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/v05/lambda-functions/add-partition-function'
+        LambdaUIDeploymentCodePrefix: 'qos/v06/lambda-functions/ui-deployment'
+        PlayerSummaryCWCodePrefix: 'qos/v06/lambda-functions/playersummary-cw-function'
+        QuizSummaryCWCodePrefix: 'qos/v06/lambda-functions/quizsummary-cw-function'
+        AddPartitionFunctionCodePrefix: 'qos/v06/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
 
 Parameters:
@@ -867,43 +867,43 @@ Resources:
     Properties:
       ApplicationName: !Sub '${AWS::StackName}-qos-realtimeapp1'
       ApplicationDescription: "QoS Realtime Application"
-      ApplicationCode: "CREATE OR REPLACE STREAM PLAYER_STATS (METRIC_TYPE VARCHAR(20), METRIC_UNIT VARCHAR(15), CLIENT_PLATFORM VARCHAR(10), SUMMARY DOUBLE);\n
- CREATE OR REPLACE PUMP \"STREAM_PUMP4\" AS INSERT INTO \"PLAYER_STATS\" \n
- -- errors \n
- SELECT STREAM 'ERRORS', 'Count', \"client_platform\", SUM(\"error_count\") \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
- UNION ALL \n
- -- average start up time in seconds \n
- SELECT STREAM 'STARTUP_TIME', 'Seconds', \"client_platform\", AVG(\"startup_latency_ms\")/1000 \n
- FROM     \"SOURCE_SQL_STREAM_001\"  where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
-  UNION ALL \n
--- buffer ratio \n
-SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", AVG(\"buffering_time_ms\"/\"playing_time_ms\")*100 \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND) \n
-   UNION ALL \n
--- live latency \n
-SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\")/1000 \n
- FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY' \n
- GROUP BY \"client_platform\", \n
- STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND);\n
--- concurrent users \n
-CREATE OR REPLACE PUMP stream_pump AS \n
-INSERT INTO PLAYER_STATS \n
-SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"user_id\") AS unique_count \n
-  FROM ( \n
-    SELECT STREAM DISTINCT rowtime as window_time, \n
-      \"client_platform\", \n
-      \"user_id\", \n
-      STEP((SOURCE_SQL_STREAM_001.rowtime) BY INTERVAL '60' SECOND) \n
-      FROM SOURCE_SQL_STREAM_001) as distinct_stream \n
-  GROUP BY \"client_platform\", \n
-      STEP((distinct_stream.window_time) BY INTERVAL '60' SECOND);"
+      ApplicationCode: "CREATE OR REPLACE STREAM PLAYER_STATS (METRIC_TYPE VARCHAR(20), METRIC_UNIT VARCHAR(15), CLIENT_PLATFORM VARCHAR(10), SUMMARY DOUBLE); \n
+      CREATE OR REPLACE PUMP \"STREAM_PUMP5\" AS INSERT INTO \"PLAYER_STATS\" \n
+       -- average start up time in seconds from the PLAY event \n
+       SELECT STREAM 'STARTUP_TIME', 'Seconds', \"client_platform\", AVG(\"startup_latency_ms\")/1000  \n
+       FROM     \"SOURCE_SQL_STREAM_001\"  where \"metric_type\"='PLAY'  \n
+       GROUP BY \"client_platform\",  \n
+       STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND); \n
+      CREATE OR REPLACE PUMP \"STREAM_PUMP4\" AS INSERT INTO \"PLAYER_STATS\" \n
+       -- Sum of errors \n
+       SELECT STREAM 'ERRORS', 'Count', \"client_platform\", SUM(\"error_count\")  \n
+       FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY'  \n
+       GROUP BY \"client_platform\",  \n
+       STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND)  \n
+       UNION ALL  \n
+       -- buffer ratio buffering_time vs (playing+buffering) time \n
+       SELECT STREAM 'BUFFER_RATIO', 'Percent', \"client_platform\", SUM(\"buffering_time_ms\")*100/(SUM(\"playing_time_ms\")+SUM(\"buffering_time_ms\")) \n
+       FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY'  \n
+       GROUP BY \"client_platform\",  \n
+       STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND)  \n
+       UNION ALL  \n
+       -- live latency in seconds \n
+       SELECT STREAM 'LIVE_LATENCY', 'Seconds', \"client_platform\", AVG(\"live_latency_ms\")/1000  \n
+       FROM     \"SOURCE_SQL_STREAM_001\" where \"metric_type\"='PLAYBACK_SUMMARY'  \n
+       GROUP BY \"client_platform\",  \n
+       STEP(\"SOURCE_SQL_STREAM_001\".ROWTIME BY INTERVAL '60' SECOND); \n
+       -- concurrent users computed by unique playback session_id \n
+       CREATE OR REPLACE PUMP stream_pump AS  \n
+       INSERT INTO PLAYER_STATS  \n
+       SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream.\"session_id\") AS unique_count  \n
+       FROM (  \n
+       SELECT STREAM DISTINCT rowtime as window_time,  \n
+       \"client_platform\",  \n
+       \"session_id\", \n
+       STEP((SOURCE_SQL_STREAM_001.rowtime) BY INTERVAL '60' SECOND)  \n
+       FROM SOURCE_SQL_STREAM_001 where \"metric_type\"='PLAYBACK_SUMMARY' ) as distinct_stream  \n
+       GROUP BY \"client_platform\", \n
+       STEP((distinct_stream.window_time) BY INTERVAL '60' SECOND);"
       Inputs:
         - NamePrefix: "SOURCE_SQL_STREAM"
           InputSchema:
@@ -1256,7 +1256,122 @@ SELECT STREAM 'CONCURRENCY', 'Count', \"client_platform\", COUNT(distinct_stream
     Type: AWS::CloudWatch::Dashboard
     Properties:
       DashboardName: !Sub "${AWS::StackName}-QoS-PlayerSummaryDashboard"
-      DashboardBody: !Sub '{"widgets":[{"type":"metric","x":9,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","BUFFER_RATIO","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"p95","period":60,"start":"-PT1H","end":"P0D","title":"Buffer Ratio - p95"}},{"type":"metric","x":0,"y":3,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","CONCURRENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","stat":"Average","period":60,"start":"-PT1H","end":"P0D","title":"Concurrent Users - Avg"}},{"type":"metric","x":0,"y":9,"width":12,"height":6,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","ERRORS","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Errors","stat":"Sum","period":60}},{"type":"metric","x":0,"y":0,"width":18,"height":3,"properties":{"metrics":[["${AWS::StackName}-QoS/PlayerSummary","LIVE_LATENCY","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]],"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Live Latency","stat":"Average","period":60}},{"type":"metric","x":9,"y":9,"width":12,"height":6,"properties":{"view":"singleValue","stacked":false,"region":"${AWS::Region}","start":"-PT1H","end":"P0D","title":"Startup Time","stat":"Average","period":60,"metrics":[["${AWS::StackName}-QoS/PlayerSummary","STARTUP_TIME","ClientPlatform","android",{"accountId":"${AWS::AccountId}"}],["...","ios",{"accountId":"${AWS::AccountId}"}],["...","web",{"accountId":"${AWS::AccountId}"}]]}}]}'
+      DashboardBody: !Sub |
+          {
+              "widgets": [
+                  {
+                      "type": "metric",
+                      "x": 12,
+                      "y": 3,
+                      "width": 12,
+                      "height": 6,
+                      "properties": {
+                          "metrics": [
+                              [ "${AWS::StackName}-QoS/PlayerSummary", "BUFFER_RATIO", "ClientPlatform", "android", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "ios", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "web", { "accountId": "${AWS::AccountId}" } ]
+                          ],
+                          "view": "singleValue",
+                          "stacked": false,
+                          "region": "${AWS::Region}",
+                          "stat": "p95",
+                          "period": 60,
+                          "title": "Buffer Ratio",
+                          "liveData": true
+                      }
+                  },
+                  {
+                      "type": "metric",
+                      "x": 0,
+                      "y": 3,
+                      "width": 12,
+                      "height": 6,
+                      "properties": {
+                          "metrics": [
+                              [ "${AWS::StackName}-QoS/PlayerSummary", "CONCURRENCY", "ClientPlatform", "android", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "ios", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "web", { "accountId": "${AWS::AccountId}" } ]
+                          ],
+                          "view": "singleValue",
+                          "stacked": false,
+                          "region": "${AWS::Region}",
+                          "stat": "Average",
+                          "period": 60,
+                          "title": "Concurrent Users",
+                          "liveData": true
+                      }
+                  },
+                  {
+                      "type": "metric",
+                      "x": 0,
+                      "y": 9,
+                      "width": 12,
+                      "height": 6,
+                      "properties": {
+                          "metrics": [
+                              [ "${AWS::StackName}-QoS/PlayerSummary", "ERRORS", "ClientPlatform", "android", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "ios", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "web", { "accountId": "${AWS::AccountId}" } ]
+                          ],
+                          "view": "singleValue",
+                          "stacked": false,
+                          "region": "${AWS::Region}",
+                          "start": "-PT1H",
+                          "end": "P0D",
+                          "title": "Errors",
+                          "stat": "Sum",
+                          "period": 60,
+                          "liveData": true
+                      }
+                  },
+                  {
+                      "type": "metric",
+                      "x": 0,
+                      "y": 0,
+                      "width": 18,
+                      "height": 3,
+                      "properties": {
+                          "metrics": [
+                              [ "${AWS::StackName}-QoS/PlayerSummary", "LIVE_LATENCY", "ClientPlatform", "android", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "ios", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "web", { "accountId": "${AWS::AccountId}" } ]
+                          ],
+                          "view": "singleValue",
+                          "stacked": false,
+                          "region": "${AWS::Region}",
+                          "title": "Live Latency",
+                          "stat": "Average",
+                          "period": 60,
+                          "liveData": true
+                      }
+                  },
+                  {
+                      "type": "metric",
+                      "x": 12,
+                      "y": 9,
+                      "width": 12,
+                      "height": 6,
+                      "properties": {
+                          "view": "singleValue",
+                          "stacked": false,
+                          "region": "${AWS::Region}",
+                          "start": "-PT1H",
+                          "end": "P0D",
+                          "title": "Startup Time",
+                          "stat": "Average",
+                          "period": 60,
+                          "metrics": [
+                              [ "${AWS::StackName}-QoS/PlayerSummary", "STARTUP_TIME", "ClientPlatform", "android", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "ios", { "accountId": "${AWS::AccountId}" } ],
+                              [ "...", "web", { "accountId": "${AWS::AccountId}" } ]
+                          ],
+                          "liveData": true,
+                          "setPeriodToTimeRange": true
+
+                      }
+                  }
+              ]
+          }
 
   EventBridgeIngestApiPOST:
     Type: AWS::ApiGateway::Method
