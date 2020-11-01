@@ -1,4 +1,6 @@
- {
+{
+  "player_summary" : {
+    "mappings" : {
       "properties" : {
         "CloudFront-Is-Desktop-Viewer" : {
           "type" : "text",
@@ -283,3 +285,5 @@
         }
       }
     }
+  }
+}
