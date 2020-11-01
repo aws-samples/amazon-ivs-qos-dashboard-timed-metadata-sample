@@ -15,3 +15,6 @@ cloudformation/deployment_package.yaml
 package/
 
 yarn.lock
+deployment_test.yaml
+deployment_test_mod.yaml
+deployment_test_package.yaml

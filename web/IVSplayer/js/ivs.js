@@ -17,7 +17,7 @@
  */
 
 import {config} from "./config.js"; // see comments in config.js for the purposes of the URLs
-const playbackUrl = config.PlaybackURL;
+var playbackUrl = config.PlaybackURL;
 const sendQoSEventUrl = config.SendQoSEventURL;
 const sendQuizAnswerUrl = config.SendQuizAnswerURL;
 
@@ -408,8 +408,12 @@ const cardInnerEl = document.getElementById("card-inner");
   }
 
   // Check whether the video being played is live or VOD
+  // For now it is hardcorded to return 'true' always
+  // VOD to be supported in future
   function isLiveChannel(){
-    return (player.getDuration() == Infinity);
+
+    // return (player.getDuration() == Infinity);
+    return true;
   }
 
   // Parse and get the Channel watched from the Playback URL
@@ -417,7 +421,10 @@ const cardInnerEl = document.getElementById("card-inner");
     if (live) {
       var myIndex1 = playbackUrl.indexOf("channel.") + 8;
       var myIndex2 = playbackUrl.indexOf(".m3u8");
-      return playbackUrl.substring(myIndex1, myIndex2);
+      var channelName = playbackUrl.substring(myIndex1, myIndex2);
+      console.log("playbackUrl ",playbackUrl);
+      console.log("Channel name :",channelName);
+      return channelName;
     } else {
       return playbackUrl;
     }
@@ -464,5 +471,25 @@ const cardInnerEl = document.getElementById("card-inner");
     });
   }
   // === subroutines for sending QoS events and timed metadata events ===
+
+  var mySelect = $('#playback_url');
+  var playbackUrls = config.PlaybackURLs.split(",");
+  $.each(playbackUrls, function(val, text) {
+
+    mySelect.append(
+        $('<option></option>').val(text).html(text.substring(text.lastIndexOf("channel")+8))
+    );
+  });
+
+  $('#playVideo').click(function () {
+    var selectedPlaybackUrl = $('#playback_url option:selected').val();
+    console.log("PlaybackURL :",selectedPlaybackUrl);
+    player.pause();
+    if(selectedPlaybackUrl){
+      player.load(selectedPlaybackUrl);
+      playbackUrl = selectedPlaybackUrl;
+      player.play();
+    }
+  });
 
 })(window.IVSPlayer);

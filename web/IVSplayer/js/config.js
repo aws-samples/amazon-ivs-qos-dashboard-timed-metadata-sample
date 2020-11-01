@@ -23,15 +23,17 @@ export const config = {
   // end point for sending timed metadata feedback (e.g., quiz answer) events
   "SendQuizAnswerURL":"ANSWER_SUMMARY_ENDPOINT",
   "client_platform": "web",
+  "PlaybackURLs": "PLAYBACK_URLS",
 };
 
 // export const config = {
 //   // an IVS live channel (or VOD title)'s playback URL, for example, the permanent test channel with quiz timed metadata
 //   //   https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
-//   "PlaybackURL": "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8",
+//   "PlaybackURL": "PLAYBACK_URL",
 //   // end point for sending playback QoS (i.e., playback summary) events
-//   "SendQoSEventURL": "https://d1k3iqt5m1v3ig.cloudfront.net/prod/streams",
+//   "SendQoSEventURL": "https://eczvtm7m82.execute-api.eu-west-1.amazonaws.com/prod/streams",
 //   // end point for sending timed metadata feedback (e.g., quiz answer) events
-//   "SendQuizAnswerURL": "https://d1k3iqt5m1v3ig.cloudfront.net/prod/streams",
+//   "SendQuizAnswerURL":"https://eczvtm7m82.execute-api.eu-west-1.amazonaws.com/prod/streams",
 //   "client_platform": "web",
+//   "PlaybackURLs": "https://b1a2a57a7ffd.eu-west-1.playback.live-video.net/api/video/v1/eu-west-1.444603092185.channel.tbHb69cdvlbk.m3u8,https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8",
 // };

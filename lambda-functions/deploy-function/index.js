@@ -89,7 +89,7 @@ function uploadUIAssets(event) {
       fileContents = fileContents.toString();
       fileContents = fileContents.replace('PLAYER_SUMMARY_ENDPOINT', PlayerSummaryEndpoint);
       fileContents = fileContents.replace('ANSWER_SUMMARY_ENDPOINT', AnswerSummaryEndpoint);
-      fileContents = fileContents.replace('PLAYBACK_URL', Playback_URL);
+      fileContents = fileContents.replace('PLAYBACK_URLS', Playback_URL);
      }
 
      S3.putObject({

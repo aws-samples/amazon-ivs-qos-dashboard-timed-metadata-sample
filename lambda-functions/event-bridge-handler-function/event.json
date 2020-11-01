@@ -1,0 +1,16 @@
+{
+  "version": "2",
+  "id": "3fc975dc-f0ec-9985-901c-3f43bd36322e",
+  "detail-type": "IVS Stream State Change",
+  "source": "aws.ivs",
+  "account": "444603092185",
+  "time": "2020-10-01T02:01:58Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:ivs:eu-west-1:444603092185:channel/tbHb69cdvlbk"
+  ],
+  "detail": {
+    "event_name": "Stream End",
+    "channel_name": "ivs_channel3"
+  }
+}

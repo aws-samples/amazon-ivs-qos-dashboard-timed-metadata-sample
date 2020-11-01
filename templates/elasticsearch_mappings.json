@@ -1,4 +1,4 @@
-{
+ {
       "properties" : {
         "CloudFront-Is-Desktop-Viewer" : {
           "type" : "text",
@@ -81,7 +81,13 @@
             }
           }
         },
+        "buffering_count" : {
+          "type" : "long"
+        },
         "buffering_time_ms" : {
+          "type" : "long"
+        },
+        "channel_count" : {
           "type" : "long"
         },
         "channel_watched" : {
@@ -94,6 +100,27 @@
           }
         },
         "client_platform" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "current_count" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "duration" : {
+          "type" : "long"
+        },
+        "end_playback_position_sec" : {
           "type" : "text",
           "fields" : {
             "keyword" : {
@@ -128,11 +155,29 @@
             }
           }
         },
+        "from_rendition_name" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
         "is_live" : {
           "type" : "boolean"
         },
-        "live_latency_sec" : {
+        "live_latency_ms" : {
           "type" : "long"
+        },
+        "live_latency_sec" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
         },
         "metric_type" : {
           "type" : "text",
@@ -147,6 +192,15 @@
           "type" : "long"
         },
         "question" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "region" : {
           "type" : "text",
           "fields" : {
             "keyword" : {
@@ -176,6 +230,15 @@
             }
           }
         },
+        "start_playback_position_sec" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
         "startup_latency_ms" : {
           "type" : "long"
         },
@@ -192,6 +255,15 @@
           "type" : "long"
         },
         "to_rendition_group" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "to_rendition_name" : {
           "type" : "text",
           "fields" : {
             "keyword" : {

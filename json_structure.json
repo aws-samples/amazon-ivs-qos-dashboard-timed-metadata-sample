@@ -1,0 +1,44 @@
+Sent from client side
+{
+    "metric_type": "PLAYBACK_SUMMARY",
+    "client_platform": "web",
+    "is_live": true,
+    "channel_watched": "xhP3ExfcX8ON",
+    "error_count": 0,
+    "playing_time_ms": 60015,
+    "buffering_time_ms": 0,
+    "rendition_name": "720p",
+    "rendition_height": 720,
+    "startup_latency_ms": 0,
+    "live_latency_sec": 2,
+    "session_id": "7853d92ca5a94bb7b470cf615e75c322",
+    "user_id": "26d648a4bc334862a6d0bd001f231d0e"
+}
+
+
+Enriched in CloudFront + API GW
+
+{
+  "metric_type":"PLAYBACK_SUMMARY",
+  "client_platform":"web",
+  "is_live":true,
+  "channel_watched":"xhP3ExfcX8ON",
+  "error_count":0,
+  "playing_time_ms":61028,
+  "buffering_time_ms":0,
+  "rendition_name":"720p",
+  "rendition_height":720,
+  "startup_latency_ms":0,
+  "live_latency_sec":"3",
+  "session_id":"7853d92ca5a94bb7b470cf615e75c322",
+  "user_id":"26d648a4bc334862a6d0bd001f231d0e",
+  "CloudFront-Viewer-Country-Name":"United Arab Emirates",
+  "CloudFront-Viewer-City":"Dubai",
+  "CloudFront-Viewer-Latitude":"",
+  "CloudFront-Viewer-Longitude":"",
+  "CloudFront-Is-SmartTV-Viewer":false,
+  "CloudFront-Is-Tablet-Viewer":false,
+  "CloudFront-Is-Mobile-Viewer":false,
+  "CloudFront-Is-Desktop-Viewer":true,
+  "event_time":1600102833593
+}

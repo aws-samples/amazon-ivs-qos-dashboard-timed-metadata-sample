@@ -8,6 +8,7 @@
           "client_platform": {"type": "string"},
           "channel_watched": {"type": "string"},
           "buffering_time_ms": {"type": "integer"},
+          "buffering_count": {"type": "integer"},
           "rendition_name": {"type": "string"},
           "rendition_height": {"type": "integer"},
           "startup_latency_ms": {"type": "integer"},
