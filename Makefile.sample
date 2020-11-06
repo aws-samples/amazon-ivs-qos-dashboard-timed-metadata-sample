@@ -54,7 +54,7 @@ deletes3:
 copycodeww:
 	@for region in $(regions) ; do \
 	  echo $$region; echo $(bucket);\
-		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/lambda-functions/ui-deployment/user-interfaces/$(version)/ --acl public-read --profile $(profile); \
+		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/$(version)/lambda-functions/ui-deployment/user-interfaces/ --acl public-read --profile $(profile); \
 		done
 
 copytemplateww:
