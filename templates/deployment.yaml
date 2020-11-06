@@ -5,11 +5,11 @@ Description: IVS QoS Dashboard Backend - Includes sample player with event captu
 Mappings:
   SourceCodeBucket:
     General:
-      S3Bucket: ivsqos-github-templates
-      LambdaUIDeploymentCodePrefix: qos/v0.4/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/v0.4/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/v0.4/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/v0.4/lambda-functions/add-partition-function
+      S3Bucket: acousins-starfruit-qos
+      LambdaUIDeploymentCodePrefix: qos/ivsqos102020/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/ivsqos102020/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/ivsqos102020/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/ivsqos102020/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   PlaybackURL:
@@ -405,7 +405,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/2220962704972dcdcdfa237cc37cb1a6
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/e5b373aff9f4afd65519ff401bb5daa4
       MemorySize: 512
       Environment:
         Variables:
@@ -506,7 +506,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/e2e928a1bd32cb38b7f1a5d51f67a8ff
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/aba309ab2bcea89108d1d90ce4616098
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -523,7 +523,7 @@ Resources:
   EventBridgeHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/f15e51c1e1cc87391510c5b2312341fb
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/729e0088afeba409661de701f9404b65
       MemorySize: 128
       Handler: function.handler
       Role:
@@ -573,26 +573,10 @@ Resources:
           Principal:
             Service:
             - lambda.amazonaws.com
-  QuizMasterFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/538f1af6a597c09ad444b025c395de6f
-      MemorySize: 512
-      Handler: main
-      Role:
-        Fn::GetAtt:
-        - LambdaExecutionRole
-        - Arn
-      Timeout: 300
-      Runtime: go1.x
-      Environment:
-        Variables:
-          CHANNEL_ARNS:
-            Fn::Sub: ${AWS::StackName}-QoS
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/2f6df329603aa536d829639a0fbc488d
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/e2957a0732e5325739343f108de1e862
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -608,7 +592,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/6863c8cdf7ff8f2afbf1f239ca5af1bb
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/d22f6fa4253e022f48746a33afcf014a
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -685,7 +669,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ivsqos-github-templates-eu-west-1/qos/v0.4/lambda-functions/8df6dcfbb4273965d0d7c1722e5fb33f
+      CodeUri: s3://acousins-starfruit-qos-us-west-2/deploy/lambda-functions/416c2eee8a83e12eb14bc36d0cd3028c
       MemorySize: 512
       Handler: index.handler
       Role:
