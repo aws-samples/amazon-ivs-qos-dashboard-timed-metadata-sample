@@ -18,13 +18,12 @@ playback_url = https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/
 # Set the ElasticSearch ARN here
 es_arn =
 
-all: image build package copycodeww copytemplateww deploy
+all: clean image build package copycodeww copytemplateww deploy
 
 image:
 	docker build --tag amazonlinux:${docker_image} .
-	mkdir -p dist
 
-build: clean
+build:
 	docker run --rm --volume ${PWD}/lambda-functions/deploy-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install adm-zip --save; npm install generate-password --save; npm install mime --save; npm install --only=prod"
 	docker run --rm --volume ${PWD}/lambda-functions/playersummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 	docker run --rm --volume ${PWD}/lambda-functions/quizsummary-cw-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
@@ -33,6 +32,7 @@ build: clean
 	docker run -it --rm --volume ${PWD}/lambda-functions/record-validation-function:/build amazonlinux:${docker_image} /bin/bash -c "pip install --target=./package -r requirements.txt"
 
 package:
+	mkdir -p dist
 	cd lambda-functions/deploy-function && zip -x \.* event.json \*.yaml -FS -q -r ../../dist/deploy-function.zip * && cd ../..
 	cd lambda-functions/playersummary-cw-function && zip -FS -q -r ../../dist/playersummary-cw-function.zip * && cd ../..
 	cd lambda-functions/quizsummary-cw-function && zip -FS -q -r ../../dist/quizsummary-cw-function.zip * && cd ../..
