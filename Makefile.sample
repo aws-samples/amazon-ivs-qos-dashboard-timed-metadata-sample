@@ -7,15 +7,17 @@ regions = <ENTER ONE OR MORE AWS REGION CODE TO DEPLOY. Example: eu-west-1>
 # regions = ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2 ap-south-1 ca-central-1 eu-west-1 eu-west-2 eu-west-3 eu-north-1 sa-east-1 us-east-1 us-east-2 us-west-2
 # set to AWS CLI profile name to use
 profile = <ENTER THE AWS CLI PROFILE NAME. Example: default>
-# set Stack Name
-stack_name = ivsqos
-# set the name of Docket Image which will be build
-docker_image = ivsqos
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
-version = ivsqosv1
+version = v01
+# set Stack Name
+stack_name = ivsqos$(version)
+# set the name of Docket Image which will be build
+docker_image = ivsqos$(version)
+# Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
 playback_url = https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
-
-all: image build package copycodeww copytemplateww deploy
+# Set the ElasticSearch ARN here
+es_arn = <Enter ARN for ElasticSearch>
+all: clean image build package copycodeww copytemplateww
 
 image:
 	docker build --tag amazonlinux:${docker_image} .
@@ -27,17 +29,16 @@ build:
 	docker run --rm --volume ${PWD}/lambda-functions/add-partition-function:/build amazonlinux:${docker_image} /bin/bash -c "npm init -f -y; npm install --only=prod"
 	mkdir -p ${PWD}/lambda-functions/record-validation-function/package
 	docker run -it --rm --volume ${PWD}/lambda-functions/record-validation-function:/build amazonlinux:${docker_image} /bin/bash -c "pip install --target=./package -r requirements.txt"
-	docker run --rm --volume ${PWD}/lambda-functions/metrics-collector-function:/build amazonlinux:${docker_image} /bin/bash -c "npm install aws-sdk@2.723.0 --save; npm install --only=prod"
 
 package:
-	mkdir -p dist && cd lambda-functions/deploy-function && zip -x \.* event.json \*.yaml -FS -q -r ../../dist/deploy-function.zip * && cd ../..
-	mkdir -p dist && cd lambda-functions/playersummary-cw-function && zip -FS -q -r ../../dist/playersummary-cw-function.zip * && cd ../..
-	mkdir -p dist && cd lambda-functions/quizsummary-cw-function && zip -FS -q -r ../../dist/quizsummary-cw-function.zip * && cd ../..
-	mkdir -p dist && cd lambda-functions/add-partition-function && zip -FS -q -r ../../dist/add-partition-function.zip * && cd ../..
-	mkdir -p dist && cd web/IVSplayer && zip -FS -q -r ../../dist/player-ui.zip * && cd ../../..
-	mkdir -p dist && cd lambda-functions/record-validation-function/package && zip -FS -q -r ../../../dist/record-validation-function.zip * && cd .. && zip -g ../../dist/record-validation-function.zip *.py && zip -g ../../dist/record-validation-function.zip *.json && cd ../../..
-	mkdir -p dist && cd lambda-functions/metrics-collector-function && zip -FS -q -r ../../dist/metrics-collector-function.zip * && cd ../..
-	mkdir -p dist && cd lambda-functions/event-bridge-handler-function && zip -FS -q -r ../../dist/event-bridge-handler-function.zip * && cd ../..
+	mkdir -p dist
+	cd lambda-functions/deploy-function && zip -x \.* event.json \*.yaml -FS -q -r ../../dist/deploy-function.zip * && cd ../..
+	cd lambda-functions/playersummary-cw-function && zip -FS -q -r ../../dist/playersummary-cw-function.zip * && cd ../..
+	cd lambda-functions/quizsummary-cw-function && zip -FS -q -r ../../dist/quizsummary-cw-function.zip * && cd ../..
+	cd lambda-functions/add-partition-function && zip -FS -q -r ../../dist/add-partition-function.zip * && cd ../..
+	cd web/IVSplayer && zip -FS -q -r ../../dist/player-ui.zip * && cd ../../..
+	cd lambda-functions/record-validation-function/package && zip -FS -q -r ../../../dist/record-validation-function.zip * && cd .. && zip -g ../../dist/record-validation-function.zip *.py && zip -g ../../dist/record-validation-function.zip *.json && cd ../../..
+	cd lambda-functions/event-bridge-handler-function && zip -FS -q -r ../../dist/event-bridge-handler-function.zip * && cd ../..
 
 creates3:
 	@for region in $(regions);do \
@@ -79,8 +80,9 @@ deploy:
 	--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn}
 
 clean:
-	rm -r dist/*
-	rm -r lambda-functions/deploy-function/node_modules/*
+	rm -rf dist/*
+	rm -rf lambda-functions/deploy-function/node_modules/*
+	rm -rf lambda-functions/record-validation-function/package/*
 
 cleandocker:
 	docker rmi --force amazonlinux:${docker_image}

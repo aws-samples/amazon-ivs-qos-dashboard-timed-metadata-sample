@@ -3,13 +3,14 @@ Makefile_dev
 Makefile_prod
 Makefile_public
 Makefile
+Makefile_*
 
 # build artifacts
 node_modules/
 dist/
 dist/*.zip
-cloudformation/deployment.yaml
-cloudformation/deployment_package.yaml
+templates/deployment.yaml
+templates/deployment_package.yaml
 
 # Python dependencies
 package/
