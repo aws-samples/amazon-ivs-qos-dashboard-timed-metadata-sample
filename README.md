@@ -2,15 +2,17 @@
 
 This is a sample application for use measuring the performance and audience experience for streaming video delivered via [Amazon Interactive Video Service](https://aws.amazon.com/ivs/).
 
-This application consists of two core components:
+This application consists of three core components:
 
-* an integration with the [IVS player SDK](https://docs.aws.amazon.com/ivs/latest/userguide/SWPG.html) to capture metrics recording the viewer experience while watching and interacting with video served by the IVS Player. 
-* A backend solution which captures, processes and presents the metrics in the form of an ElasticSearch based Dashboard which can be used to monitor and observe user experiences when watching streams served by IVS. 
+1. an integration with the [IVS player SDK](https://docs.aws.amazon.com/ivs/latest/userguide/SWPG.html) to capture metrics recording the viewer experience while watching and interacting with video served by the IVS Player. 
+2. A set of EventBridge Rules which capture events relevant to audience experience reported by the IVS service
+3. A backend solution which captures, processes and presents the metrics in the form of an ElasticSearch based Dashboard which can be used to monitor and observe user experiences when watching streams served by IVS. 
 
 ## Getting Started with the Amazon IVS Quality of Service Dashboard
 
-* [Deployment](#Deployment)
+* [Launching the Solution](#Deployment)
 * [Architecture Overview](#Architecture)
+* [Building from Source](#Building)
 * [Contributing](#Contributing)
 * [Security](#Security)
 * [License](#License)
@@ -27,23 +29,40 @@ The solution is deployed using an AWS CloudFormation template with AWS Lambda ba
 | US (N.Virginia) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-east-1.s3.amazonaws.com%2Fqos%2Fv0.4%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
 | US (Oregon) |<a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ivsqos&templateURL=https%3A%2F%2Fivsqos-github-templates-us-west-2.s3-us-west-2.amazonaws.com%2Fqos%2Fv0.4%2Ftemplates%2Fdeployment.yaml" target="_blank">Launch stack</a> |
 
-### CloudFormation Deployment
+### CloudFormation Parameters
 
-1. The demo deployment included with the solution is configured to use a publicly available IVS test stream. If you wish to use your own stream in the demo, review the [IVS Getting Started](https://docs.aws.amazon.com/ivs/latest/userguide/GSIVS.html) and follow this process to create a channel. 
-2. Once the channel is created, note the Playback URL displayed in the console.
-3. Deploy the CloudFormation template in your chosen AWS Region by clicking on the appropriate link above.
-4. When prompted for the PlaybackURL Parameter at step 2 of the CloudFormation Stack Deployment, enter the IVS Stream Playback URL you identified in Step 2 for your streaming channel, or leave this at the default value.
-5. Once the CloudFormation template is deployed, navigate to the Output tab in CloudFormation as several settings are emitted here and will be used elsewhere. You can open the demo app by clicking on the PlayerURL link.
+A number of parameters are available to customize the solution as a part of the CloudFormation Stack deployment process:
 
-## Post Deployment
+| Parameter | Description |
+|---|---|
+| DeployDemoUI | When enabled, a demo website will be deployed to S3/CloudFront with a sample video player configured to send metrics to the deployed backend. Set to 'true' by default. |
+| ElasticSearchDomainArn | Enter the ARN of an AWS ElasticSearch Domain you wish to deliver metrics to for dashboarding. This is an optional setting. |
+| ElasticSearchIndexName | Enter a name for the Index metrics are delivered to AWS ElasticSearch under. Set to 'player_summary' by default. | 
+| ElasticSearchIndexRotation | Set the Rotation Interval for the ElasticSearch Index. Set to NoRotation by default. | 
+| PlaybackURL | The URL listed here is used as the source of video for the DemoUI deployed as part of the DeployDemoUI Parameter. By default this is a public sample stream. Set this to the Playback URL of your own IVS channel to configure the Demo UI to use your own IVS stream. | 
+| PushToElasticSearch | When enabled, metrics will be delivered to the AWS ElasticSearch domain using the settings configured in other ElasticSearch parameters specified. Set to 'false' by default. |
+
+### Post Deployment
+
+Once the CloudFormation template is deployed, navigate to the Output tab in CloudFormation as several settings are emitted here and will be used elsewhere. You can open the demo app by clicking on the PlayerURL link.
+
+After the CloudFormation deployment completes, the backend infrastructure is configured to capture metrics from the video player and IVS backend. Three dashboarding options are available to visualize these metrics, however these are not enabled by default. 
+
+To enable a dashboard in your preferred platform, please see the following guides:
+
+### ElasticSearch Dashboards
+
+ElasticSearch is a popular tool for building dynamic dashboards using its Kibana component. ElasticSearch offers a good balance between visualization of data with low latency, and ease of exploration. 
+
+If you set the PushToElasticSearch parameter to 'true' when deploying the CloudFormation template, see the [ElasticSearch Guide](./docs/elasticsearch.md) for detailed guidance on how to build the sample Dashboards within AWS ElasticSearch. 
+
 
 ### Enabling CloudWatch Dashboards
 
-[CloudWatch Dashboards](./docs/cloudwatch-dashboards.md)
+Operational metrics can be delivered to CloudWatch for use in monitoring and alarming streams within the AWS Management Console. Generation of these metrics is performed by an Amazon Kinesis Data Analytics application which is deployed into your account but must be enabled in order for CloudWatch metrics to start to be generated. 
 
-### Enabling ElasticSearch
+Please see the [CloudWatch Dashboards Guide](./docs/cloudwatch-dashboards.md) for next steps on enabling Cloudwatch Dashboards. 
 
-1. To configure delivery of metrics to ElasticSearch, please see the [ElasticSearch Guide](./docs/elasticsearch.md)
 
 
 
@@ -60,6 +79,10 @@ Captured metrics are delivered to AWS via API Gateway and Kinesis Firehose. Kine
 
 ### Backend Architecture
 ![Backend Architecture](./docs/images/qos_architecture.jpg)
+
+### Metrics Description
+
+For more information on the metrics captured, please see [Metrics Overview](./docs/metrics-overview.md)
 
 ## Building
 
@@ -85,23 +108,17 @@ Building this project requires the following dependencies to be installed on you
 
 ``make all``
 
-## Sample QuickSight Dashboard
+This command will run through a series of steps to package and build a custom version of the solution. The process will upload artefacts required for deployment, including Lambda function code and the final CloudFormation template, to the S3 bucket created in step 3.
 
-![Solution Components](./docs/images/popular_channels.png)
-
-![Solution Components](./docs/images/popular_platforms.png)
-
-![Solution Components](./docs/images/avg_buffer_time.png)
-
-![Solution Components](./docs/images/avg_startup_latency.png)
-
-![Solution Components](./docs/images/avg_live_latency.png)
+5. After the build process completes, you will find a CloudFormation template ```deployment.yaml``` in the ```templates/``` folder. Deploy this via CloudFormation to deploy your build of the solution. 
 
 ## Contributing
 
+See [CONTRIBUTING](CONTRIBUTING.md).
+
 ## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information on how to report any security related concerns.
 
 ## License
 
