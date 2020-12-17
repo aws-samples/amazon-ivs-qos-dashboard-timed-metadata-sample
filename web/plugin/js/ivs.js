@@ -16,8 +16,9 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-const playbackUrl =
-  "https://1c980cabe7bc.eu-west-1.playback.live-video.net/api/video/v1/eu-west-1.795688665488.channel.ISHXvGyiqFrf.m3u8";
+var playbackUrl = config.PlaybackURL;
+// const playbackUrl =
+//   "https://1c980cabe7bc.eu-west-1.playback.live-video.net/api/video/v1/eu-west-1.795688665488.channel.ISHXvGyiqFrf.m3u8";
 const videoPlayer = document.getElementById("video-player");
 const quizEl = document.getElementById("quiz");
 const waitMessage = document.getElementById("waiting");
@@ -59,7 +60,7 @@ const cardInnerEl = document.getElementById("card-inner");
 
   // Setup stream and play
   player.setAutoplay(true);
-  player.load(playbackUrl);
+  // player.load(playbackUrl);
 
   // Setvolume
   player.setVolume(0.1);
@@ -110,6 +111,29 @@ const cardInnerEl = document.getElementById("card-inner");
     cardInnerEl.style.display = "";
   }
 
-  initializeQoS(player,playbackUrl);
+  // === populating the drop down of channels ===
+
+  var mySelect = $('#playback_url');
+  var playbackUrls = config.PlaybackURLs.split(",");
+  $.each(playbackUrls, function(val, text) {
+
+    mySelect.append(
+        $('<option></option>').val(text).html(text.substring(text.lastIndexOf("channel")+8))
+    );
+  });
+
+  $('#playVideo').click(function () {
+    var selectedPlaybackUrl = $('#playback_url option:selected').val();
+    console.log("PlaybackURL :",selectedPlaybackUrl);
+    player.pause();
+    if(selectedPlaybackUrl){
+      player.load(selectedPlaybackUrl);
+      playbackUrl = selectedPlaybackUrl;
+      // initialize QoS
+      initializeQoS(player,playbackUrl);
+      player.play();
+    }
+  });
+
   waitMessage.style.display = "";
 })(window.IVSPlayer);

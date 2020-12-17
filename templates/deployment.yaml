@@ -6,10 +6,10 @@ Mappings:
   SourceCodeBucket:
     General:
       S3Bucket: ganeshji-sfqos
-      LambdaUIDeploymentCodePrefix: qos/v01/lambda-functions/ui-deployment
-      PlayerSummaryCWCodePrefix: qos/v01/lambda-functions/playersummary-cw-function
-      QuizSummaryCWCodePrefix: qos/v01/lambda-functions/quizsummary-cw-function
-      AddPartitionFunctionCodePrefix: qos/v01/lambda-functions/add-partition-function
+      LambdaUIDeploymentCodePrefix: qos/v08/lambda-functions/ui-deployment
+      PlayerSummaryCWCodePrefix: qos/v08/lambda-functions/playersummary-cw-function
+      QuizSummaryCWCodePrefix: qos/v08/lambda-functions/quizsummary-cw-function
+      AddPartitionFunctionCodePrefix: qos/v08/lambda-functions/add-partition-function
       UICodePrefix: user-interfaces
 Parameters:
   PlaybackURL:
@@ -406,7 +406,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: DeployDemoUICondition
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/d55550cbbd211c463af2952c9bf98346
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/2893a2450d7797f82e3c33d67f3d0ac0
       MemorySize: 512
       Environment:
         Variables:
@@ -507,7 +507,7 @@ Resources:
   RecordValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/88f48e30400f40a4ac46df671459fb25
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/7ee3f3d75bcf7928c69b5b78acad814a
       MemorySize: 512
       Handler: function.handler
       Role:
@@ -524,7 +524,7 @@ Resources:
   EventBridgeHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/64552f11b8662c857e1587ecca2d31ff
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/6216f95ef43e0903febac2494b610bca
       MemorySize: 128
       Handler: function.handler
       Role:
@@ -577,7 +577,7 @@ Resources:
   PlayerSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/17128cd6403a3ba922947f9be97415eb
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/32e81c276b80a1a528686429cfd2cf97
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -593,7 +593,7 @@ Resources:
   QuizSummaryCWFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/407e57089a2a2d76fdbb20db844ba00d
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/177a89a0e2251b985c96660e2cea9b8c
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -670,7 +670,7 @@ Resources:
   AddPartitionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/9af39e79daab99435f39b385885b576c
+      CodeUri: s3://ganeshji-sfqos-eu-west-1/deploy/lambda-functions/d5c2ebe364a65b75778ced3b4a6b1892
       MemorySize: 512
       Handler: index.handler
       Role:
@@ -1575,7 +1575,7 @@ Outputs:
     Value:
       Fn::If:
       - DeployDemoUICondition
-      - Fn::Sub: https://${CFDistributionWithDemoUI.DomainName}/ui/index.html
+      - Fn::Sub: https://${CFDistributionWithDemoUI.DomainName}/ui/plugin/sample/index.html
       - Fn::Sub: https://${CFDistributionWithoutDemoUI.DomainName}/ui/index.html
   PlayerCWDashboard:
     Value:

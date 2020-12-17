@@ -6,10 +6,10 @@ Mappings:
     SourceCodeBucket:
       General:
         S3Bucket: 'ganeshji-sfqos'
-        LambdaUIDeploymentCodePrefix: 'qos/v01/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/v01/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/v01/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/v01/lambda-functions/add-partition-function'
+        LambdaUIDeploymentCodePrefix: 'qos/v08/lambda-functions/ui-deployment'
+        PlayerSummaryCWCodePrefix: 'qos/v08/lambda-functions/playersummary-cw-function'
+        QuizSummaryCWCodePrefix: 'qos/v08/lambda-functions/quizsummary-cw-function'
+        AddPartitionFunctionCodePrefix: 'qos/v08/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
 
 Parameters:
@@ -1520,7 +1520,7 @@ Resources:
 
 Outputs:
   PlayerURL:
-    Value: !If [DeployDemoUICondition,!Sub 'https://${CFDistributionWithDemoUI.DomainName}/ui/index.html',!Sub 'https://${CFDistributionWithoutDemoUI.DomainName}/ui/index.html']
+    Value: !If [DeployDemoUICondition,!Sub 'https://${CFDistributionWithDemoUI.DomainName}/ui/plugin/sample/index.html',!Sub 'https://${CFDistributionWithoutDemoUI.DomainName}/ui/index.html']
   PlayerCWDashboard:
     Value: !Sub
       - https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}

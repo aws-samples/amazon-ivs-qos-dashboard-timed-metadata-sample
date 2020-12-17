@@ -16,18 +16,17 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
- const config_qos = {
-   // end point for sending playback QoS (i.e., playback summary) events
-   SendQoSEventURL: "https://d12g3ld0ws1p0z.cloudfront.net/prod/streams",
-   // end point for sending timed metadata feedback (e.g., quiz answer) events
-   SendQuizAnswerURL: "https://d12g3ld0ws1p0z.cloudfront.net/prod/streams",
-
-   // client platform type (i.e., web, Android, iOS), hardcoded to "web" here
-   ClientPlatform: "web"
- };
-
-const sendQoSEventUrl = config_qos.SendQoSEventURL;
-const sendQuizAnswerUrl = config_qos.SendQuizAnswerURL;
+ // const config_qos = {
+ //   // end point for sending playback QoS (i.e., playback summary) events
+ //   SendQoSEventURL: "https://d12g3ld0ws1p0z.cloudfront.net/prod/streams",
+ //   // end point for sending timed metadata feedback (e.g., quiz answer) events
+ //   SendQuizAnswerURL: "https://d12g3ld0ws1p0z.cloudfront.net/prod/streams",
+ //
+ //   // client platform type (i.e., web, Android, iOS), hardcoded to "web" here
+ //   ClientPlatform: "web"
+ // };
+const sendQoSEventUrl = config.SendQoSEventURL;
+const sendQuizAnswerUrl = config.SendQuizAnswerURL;
 
 // === Define and initialize QoS event work variables ===
 // timing control and auxiliary variables
@@ -53,13 +52,13 @@ var isLive = false;
 var channelWatched = "";
 
 function initializeQoS(player,playbackUrl) {
-  console.log("Initializing...:%s",playbackUrl);
+  log("Initializing...:%s",playbackUrl);
   const PlayerState = window.IVSPlayer.PlayerState;
   const PlayerEventType = window.IVSPlayer.PlayerEventType;
 
   isLive = isLiveChannel(player);
   channelWatched = getChannelWatched(playbackUrl,isLive);
-  console.log("Player...:%j",PlayerState);
+  log("Player...:%j",PlayerState);
 
   // Initialize player
   // const player = IVSPlayer.create();
@@ -67,7 +66,7 @@ function initializeQoS(player,playbackUrl) {
 
   // Attach event (player state) listeners
   player.addEventListener(PlayerState.READY, function () {
-    console.log("Player State - READY1");
+    log("Player State - READY1");
 
     // === Send off playback end event and reset QoS event work variables ===
     // Before the player loads a new channel, send off the last QoS event of the previous
@@ -95,7 +94,7 @@ function initializeQoS(player,playbackUrl) {
   });
 
   player.addEventListener(PlayerState.BUFFERING, function () {
-    console.log("Player State - BUFFERING");
+    log("Player State - BUFFERING");
 
     // === Update QoS event work variables ===
     if (lastPlayerState == "PLAYING") { // PLAYING -> BUFFERING (can only happen in the middle of a playback session)
@@ -108,7 +107,7 @@ function initializeQoS(player,playbackUrl) {
   });
 
   player.addEventListener(PlayerState.PLAYING, function () {
-    console.log("Player State - PLAYING");
+    log("Player State - PLAYING");
 
     // === Send off playback start event and update QoS event work variables ===
     if (startupLatencyMsOfThisSession == 0) { // the very beginning of a playback session
@@ -127,7 +126,7 @@ function initializeQoS(player,playbackUrl) {
         //   and selects a different rendiion after the rebuffering
         let newQuality = player.getQuality();
         if (lastQuality.bitrate != newQuality.bitrate) {
-          console.log(
+          log(
             `Quality changed from "${lastQuality.name}" to "${newQuality.name}".`
           );
           sendQualityChangedEvent(sendQoSEventUrl, lastQuality, newQuality);
@@ -141,7 +140,7 @@ function initializeQoS(player,playbackUrl) {
   });
 
   player.addEventListener(PlayerState.IDLE, function () {
-    console.log("Player State - IDLE");
+    log("Player State - IDLE");
 
     // === Update QoS event work variables ===
     if (lastPlayerState == "PLAYING") { // PLAYING -> IDLE
@@ -155,7 +154,7 @@ function initializeQoS(player,playbackUrl) {
   });
 
   player.addEventListener(PlayerState.ENDED, function () {
-    console.log("Player State - ENDED");
+    log("Player State - ENDED");
 
     // === Update QoS event work variables ===
     if (lastPlayerState == "PLAYING") { // PLAYING -> ENDED
@@ -177,17 +176,17 @@ function initializeQoS(player,playbackUrl) {
 
   // Attach event (quality changed) listeners
   player.addEventListener(PlayerEventType.QUALITY_CHANGED, function () {
-    console.log("PlayerEventType - QUALITY_CHANGED");
+    log("PlayerEventType - QUALITY_CHANGED");
 
     // === Send off quality change event and update QoS event work variables ===
     let newQuality = player.getQuality();
     if (lastQuality === undefined) {
       lastQuality = newQuality;
-      console.log(
+      log(
         `Quality initialized to "${lastQuality.name}".`
       );
     } else if (lastQuality.bitrate != newQuality.bitrate) {
-      console.log(
+      log(
         `Quality changed from "${lastQuality.name}" to "${newQuality.name}".`
       );
       sendQualityChangedEvent(sendQoSEventUrl, lastQuality, newQuality);
@@ -225,7 +224,7 @@ function initializeQoS(player,playbackUrl) {
       }
       userId = localStorage.getItem("ivs_qos_user_id");
     } else {
-      console.log("Sorry! No web storage support. Use Session ID as User Id");
+      log("Sorry! No web storage support. Use Session ID as User Id");
       userId = sessionId;
     }
   }
@@ -244,14 +243,14 @@ function initializeQoS(player,playbackUrl) {
   // Send playback start (PLAY) event
   function sendPlaybackStartEvent(player,eventUrl) {
       // (Yueshi to do) send out PLAY event, including startupLatencyMsOfThisSession, myJson.startup_latency_ms
-      console.log("In sendPlaybackStartEvent :%j",player);
+      log("In sendPlaybackStartEvent :%j",player);
       var myJson = {};
       myJson.metric_type = "PLAY";
 
       myJson.user_id = userId;
       myJson.session_id = sessionId;
 
-      myJson.client_platform = config_qos.client_platform;
+      myJson.client_platform = config.client_platform;
       myJson.is_live = isLive;
       myJson.channel_watched = channelWatched;
 
@@ -262,7 +261,7 @@ function initializeQoS(player,playbackUrl) {
         pushPayload(eventUrl,myJson);
       }
 
-      console.log("send QoS event - Play ", JSON.stringify(myJson), " to ", eventUrl);
+      log("send QoS event - Play ", JSON.stringify(myJson), " to ", eventUrl);
   }
 
   // Send playback end (STOP) event
@@ -273,7 +272,7 @@ function initializeQoS(player,playbackUrl) {
     myJson.user_id = userId;
     myJson.session_id = sessionId;
 
-    myJson.client_platform = config_qos.client_platform;
+    myJson.client_platform = config.client_platform;
     myJson.is_live = isLive;
     myJson.channel_watched = channelWatched;
 
@@ -283,7 +282,7 @@ function initializeQoS(player,playbackUrl) {
       pushPayload(eventUrl,myJson);
     }
 
-    console.log("send QoS event - Stop ", JSON.stringify(myJson), " to ", eventUrl);
+    log("send QoS event - Stop ", JSON.stringify(myJson), " to ", eventUrl);
   }
 
   // Send playback QoS summary (PLAYBACK_SUMMARY) event
@@ -301,7 +300,7 @@ function initializeQoS(player,playbackUrl) {
       myJson.user_id = userId;
       myJson.session_id = sessionId;
 
-      myJson.client_platform = config_qos.client_platform;
+      myJson.client_platform = config.client_platform;
       myJson.is_live = isLive;
       myJson.channel_watched = channelWatched;
 
@@ -321,7 +320,7 @@ function initializeQoS(player,playbackUrl) {
         pushPayload(eventUrl,myJson);
       }
 
-      console.log("send QoS event - PlaybackSummary ", JSON.stringify(myJson), " to ", eventUrl);
+      log("send QoS event - PlaybackSummary ", JSON.stringify(myJson), " to ", eventUrl);
     }
   }
 
@@ -333,7 +332,7 @@ function initializeQoS(player,playbackUrl) {
     myJson.user_id = userId;
     myJson.session_id = sessionId;
 
-    myJson.client_platform = config_qos.client_platform;
+    myJson.client_platform = config.client_platform;
     myJson.is_live = isLive;
     myJson.channel_watched = channelWatched;
 
@@ -347,7 +346,7 @@ function initializeQoS(player,playbackUrl) {
       pushPayload(eventUrl,myJson);
     }
 
-    console.log("send QoS event - QualityChanged ", JSON.stringify(myJson), " to ", eventUrl);
+    log("send QoS event - QualityChanged ", JSON.stringify(myJson), " to ", eventUrl);
   }
 
   // Check whether the video being played is live or VOD
@@ -365,8 +364,8 @@ function initializeQoS(player,playbackUrl) {
       var myIndex1 = playbackUrl.indexOf("channel.") + 8;
       var myIndex2 = playbackUrl.indexOf(".m3u8");
       var channelName = playbackUrl.substring(myIndex1, myIndex2);
-      console.log("playbackUrl ",playbackUrl);
-      console.log("Channel name :",channelName);
+      log("playbackUrl ",playbackUrl);
+      log("Channel name :",channelName);
       return channelName;
     } else {
       return playbackUrl;
@@ -380,12 +379,12 @@ function initializeQoS(player,playbackUrl) {
         Data: payload
     };
     wrapPayload.Records.push(record);
-    console.log("Record :%j",wrapPayload);
+    log("Record :%j",wrapPayload);
 
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        console.log("Response status :"+this.status);
+        log("Response status :"+this.status);
       }
     };
     xhttp.open("POST", endpoint, true);
@@ -400,9 +399,13 @@ function initializeQoS(player,playbackUrl) {
     //   },
     //   data: JSON.stringify(wrapPayload)
     // }).done(function(){
-    //   console.log("Success ");
+      //   console.log("Success ");
     // }).fail(function(){
     //   console.log("Error");
     // });
+  }
+
+  function log(msg){
+    console.log("[QoS SDK]:%s",msg);
   }
   // === subroutines for sending QoS events and timed metadata events ===
