@@ -294,3 +294,26 @@ h2 {
     top: -25%;
   }
 }
+
+.dropdown-wrapper {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.label-text {
+  width: 100%;
+  font-size: 18px;
+  color: #d5dbdb;
+}
+
+.spacer{
+  height:20px;
+  width: 100%;
+  display: block;
+}

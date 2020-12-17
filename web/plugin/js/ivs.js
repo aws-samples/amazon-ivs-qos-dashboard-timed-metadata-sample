@@ -97,6 +97,10 @@ const cardInnerEl = document.getElementById("card-inner");
         } else {
           q.classList.toggle("wrong");
         }
+        // === send off a timed metadata feedback event ===
+        sendQuizAnswer(sendQuizAnswerUrl, obj.question, q.textContent);
+        // === send off a timed metadata feedback event ===
+        
         setTimeout(function () {
           removeCard();
           waitMessage.style.display = "";

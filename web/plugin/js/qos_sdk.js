@@ -372,6 +372,24 @@ function initializeQoS(player,playbackUrl) {
     }
   }
 
+  // Send timed metadata feedback event
+  function sendQuizAnswer(url, question, answer) {
+    var myJson = {};
+    myJson.metric_type = "QUIZ_ANSWER";
+
+    myJson.user_id = userId;
+    myJson.session_id = sessionId;
+
+    myJson.question = question;
+    myJson.answer = answer;
+
+    if (url != "") {
+      pushPayload(url,myJson);
+    }
+
+    log("send timed metadata feedback event - QuizAnswer ", JSON.stringify(myJson), " to ", url);
+  }
+
   function pushPayload(endpoint, payload){
     let wrapPayload = {};
     wrapPayload.Records = [];
@@ -390,19 +408,6 @@ function initializeQoS(player,playbackUrl) {
     xhttp.open("POST", endpoint, true);
     xhttp.setRequestHeader("Content-type", "application/json");
     xhttp.send(JSON.stringify(wrapPayload));
-    //
-    // $.ajax({
-    //   url: endpoint,
-    //   type: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json'
-    //   },
-    //   data: JSON.stringify(wrapPayload)
-    // }).done(function(){
-      //   console.log("Success ");
-    // }).fail(function(){
-    //   console.log("Error");
-    // });
   }
 
   function log(msg){
