@@ -36,7 +36,7 @@ package:
 	cd lambda-functions/playersummary-cw-function && zip -FS -q -r ../../dist/playersummary-cw-function.zip * && cd ../..
 	cd lambda-functions/quizsummary-cw-function && zip -FS -q -r ../../dist/quizsummary-cw-function.zip * && cd ../..
 	cd lambda-functions/add-partition-function && zip -FS -q -r ../../dist/add-partition-function.zip * && cd ../..
-	cd web/IVSplayer && zip -FS -q -r ../../dist/player-ui.zip * && cd ../../..
+	cd web/ && zip -FS -q -r ../dist/player-ui.zip * && cd ../..
 	cd lambda-functions/record-validation-function/package && zip -FS -q -r ../../../dist/record-validation-function.zip * && cd .. && zip -g ../../dist/record-validation-function.zip *.py && zip -g ../../dist/record-validation-function.zip *.json && cd ../../..
 	cd lambda-functions/event-bridge-handler-function && zip -FS -q -r ../../dist/event-bridge-handler-function.zip * && cd ../..
 
