@@ -5,11 +5,11 @@ Description: IVS QoS Dashboard Backend - Includes sample player with event captu
 Mappings:
     SourceCodeBucket:
       General:
-        S3Bucket: 'ganeshji-sfqos'
-        LambdaUIDeploymentCodePrefix: 'qos/v08/lambda-functions/ui-deployment'
-        PlayerSummaryCWCodePrefix: 'qos/v08/lambda-functions/playersummary-cw-function'
-        QuizSummaryCWCodePrefix: 'qos/v08/lambda-functions/quizsummary-cw-function'
-        AddPartitionFunctionCodePrefix: 'qos/v08/lambda-functions/add-partition-function'
+        S3Bucket: 'ivsqos-github-templates'
+        LambdaUIDeploymentCodePrefix: 'qos/v0.5/lambda-functions/ui-deployment'
+        PlayerSummaryCWCodePrefix: 'qos/v0.5/lambda-functions/playersummary-cw-function'
+        QuizSummaryCWCodePrefix: 'qos/v0.5/lambda-functions/quizsummary-cw-function'
+        AddPartitionFunctionCodePrefix: 'qos/v0.5/lambda-functions/add-partition-function'
         UICodePrefix: 'user-interfaces'
 
 Parameters:
