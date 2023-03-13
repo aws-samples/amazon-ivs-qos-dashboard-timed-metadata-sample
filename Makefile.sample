@@ -14,7 +14,7 @@ stack_name = ivsqos$(version)
 # set the name of Docket Image which will be build
 docker_image = ivsqos$(version)
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
-playback_url = https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
+playback_url = <Enter playback URL>
 # Set the ElasticSearch ARN here
 es_arn = <Enter ARN for ElasticSearch>
 all: clean image build package copycodeww copytemplateww
@@ -55,7 +55,7 @@ deletes3:
 copycodeww:
 	@for region in $(regions) ; do \
 	  echo $$region; echo $(bucket);\
-		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/$(version)/lambda-functions/ui-deployment/user-interfaces/ --acl public-read --profile $(profile); \
+		aws s3 cp dist/player-ui.zip s3://$(bucket)-$$region/qos/$(version)/lambda-functions/ui-deployment/user-interfaces/ --profile $(profile); \
 		done
 
 copytemplateww:
@@ -63,7 +63,7 @@ copytemplateww:
 		echo $$region;	echo $(bucket); \
 		sed -e "s/BUCKET_NAME/${bucket}/g" -e "s/VERSION/${version}/g" templates/deployment_template.yaml > templates/deployment_package.yaml; \
 		aws cloudformation package --template-file templates/deployment_package.yaml --s3-bucket $(bucket)-$$region --s3-prefix deploy/lambda-functions --output-template-file templates/deployment.yaml --profile $(profile); \
-		aws s3 cp templates/deployment.yaml s3://$(bucket)-$$region/qos/templates/$(version)/ --acl public-read --profile $(profile); \
+		aws s3 cp templates/deployment.yaml s3://$(bucket)-$$region/qos/templates/$(version)/  --profile $(profile); \
 		done
 
 template:
@@ -76,8 +76,9 @@ distpackage:
 
 deploy:
 	aws cloudformation deploy --template-file templates/deployment.yaml \
-	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region eu-west-1 \
-	--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn}
+	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $(regions) \
+	--s3-bucket $(bucket)-$(regions) \
+	--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn} \
 
 clean:
 	rm -rf dist/*
