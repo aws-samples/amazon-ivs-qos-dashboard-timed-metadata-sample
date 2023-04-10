@@ -47,7 +47,7 @@ Save the changes
 
 ### Next map the Kinesis Firehose IAM Role to this new OpenSearch policy:
 
-1. In the OpenSearch Dashboard, navigate to `Security` > `Role` Mapping
+1. In the OpenSearch Dashboard, navigate to `Security` > `Roles` Mapping
 1. Select the '`firehose`' role and then go to the ‘`Mapped user`’ tab
 1. Click the `Manage mapping` to add a new Role Mapping
 1. Under Backend roles, add the ARN of the Role assigned to Kinesis Firehose which is listed in the CloudFormation Stack Outputs under the value "`DeliveryRoleArn`" once the template deploys successfully

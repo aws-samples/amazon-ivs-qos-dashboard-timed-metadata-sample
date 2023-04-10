@@ -26,15 +26,15 @@ Parameters:
       - true
       - false
 
-  PushToElasticSearch:
+  PushToOpenSearch:
     Type: String
-    Description: Enabling this along with specifying the ES Domain will push logs to ES
+    Description: Enabling this along with specifying the OpenSearch Domain will push logs to OpenSearch
     Default: false
     AllowedValues:
       - true
       - false
 
-  ElasticSearchDomainArn:
+  OpenSearchDomainArn:
     Type: String
     Description: ElasticSearch Domain Arn
     Default: ""
@@ -65,8 +65,8 @@ Conditions:
   DeployDemoUICondition: !Equals [!Ref DeployDemoUI, true]
   NoDeployDemoUICondition: !Equals [!Ref DeployDemoUI, false]
   USStandardRegion: !Equals [!Ref "AWS::Region", "us-east-1"]
-  PushToElasticSearchCondition: !Equals [!Ref PushToElasticSearch, true]
-  NoElasticSearchCondition: !Equals [!Ref PushToElasticSearch, false]
+  PushToOpenSearchCondition: !Equals [!Ref PushToOpenSearch, true]
+  NoOpenSearchCondition: !Equals [!Ref PushToOpenSearch, false]
 
 Resources:
   SourceBucket:
@@ -395,7 +395,7 @@ Resources:
     Type: 'Custom::DeployUI'
     Condition: DeployDemoUICondition
     Properties:
-      DeliveryStreamName: !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream]
+      DeliveryStreamName: !If [PushToOpenSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream]
       # PlayerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
       # AnswerSummaryEndpoint: !Sub 'https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams'
       Region: !Sub ${AWS::Region}
@@ -677,7 +677,7 @@ Resources:
 
   DeliveryPolicy:
     Type: AWS::IAM::Policy
-    Condition: NoElasticSearchCondition
+    Condition: NoOpenSearchCondition
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
@@ -704,7 +704,7 @@ Resources:
 
   PlayerLogsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
-    Condition: NoElasticSearchCondition
+    Condition: NoOpenSearchCondition
     DependsOn:
       - PlayerLogsBucket
       - DeliveryPolicy
@@ -726,7 +726,7 @@ Resources:
 
   ESDeliveryPolicy:
     Type: AWS::IAM::Policy
-    Condition: PushToElasticSearchCondition
+    Condition: PushToOpenSearchCondition
     Properties:
       PolicyName: firehose_delivery_policy
       PolicyDocument:
@@ -751,20 +751,20 @@ Resources:
               - "es:ESHttpPost"
               - "es:ESHttpPut"
             Resource:
-              - !Ref ElasticSearchDomainArn
-              - !Sub "${ElasticSearchDomainArn}/*"
+              - !Ref OpenSearchDomainArn
+              - !Sub "${OpenSearchDomainArn}/*"
           - Effect: Allow
             Action:
               - "es:ESHttpGet"
             Resource:
-              - !Sub "${ElasticSearchDomainArn}/_all/_settings"
-              - !Sub "${ElasticSearchDomainArn}/_cluster/stats"
-              - !Sub "${ElasticSearchDomainArn}/index-name*/_mapping/type-name"
-              - !Sub "${ElasticSearchDomainArn}/_nodes"
-              - !Sub "${ElasticSearchDomainArn}/_nodes/stats"
-              - !Sub "${ElasticSearchDomainArn}/_nodes/*/stats"
-              - !Sub "${ElasticSearchDomainArn}/_stats"
-              - !Sub "${ElasticSearchDomainArn}/index-name*/_stats"
+              - !Sub "${OpenSearchDomainArn}/_all/_settings"
+              - !Sub "${OpenSearchDomainArn}/_cluster/stats"
+              - !Sub "${OpenSearchDomainArn}/index-name*/_mapping/type-name"
+              - !Sub "${OpenSearchDomainArn}/_nodes"
+              - !Sub "${OpenSearchDomainArn}/_nodes/stats"
+              - !Sub "${OpenSearchDomainArn}/_nodes/*/stats"
+              - !Sub "${OpenSearchDomainArn}/_stats"
+              - !Sub "${OpenSearchDomainArn}/index-name*/_stats"
           - Effect: Allow
             Action:
               - "logs:PutLogEvents"
@@ -782,7 +782,7 @@ Resources:
 
   PlayerLogsESDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
-    Condition: PushToElasticSearchCondition
+    Condition: PushToOpenSearchCondition
     DependsOn:
       - PlayerLogsBucket
       - ESDeliveryPolicy
@@ -797,7 +797,7 @@ Resources:
           Enabled: true
           LogGroupName: !Ref KinesisFirehoseLogGroup
           LogStreamName: !Ref KinesisFirehoseESLogStream
-        DomainARN: !Ref ElasticSearchDomainArn
+        DomainARN: !Ref OpenSearchDomainArn
         IndexName: !Ref ElasticSearchIndexName
         IndexRotationPeriod: "NoRotation"
         #Types are deprecated in ES7.7, enable this if using older ES release
@@ -854,7 +854,7 @@ Resources:
                 Action:
                   - "firehose:DescribeDeliveryStream"
                   - "firehose:Get*"
-                Resource: !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
+                Resource: !If [PushToOpenSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
               - Effect: Allow
                 Action:
                   - "lambda:InvokeFunction"
@@ -1006,7 +1006,7 @@ Resources:
                   RecordRowPath: "$"
           KinesisFirehoseInput:
             ResourceARN:
-              !If [PushToElasticSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
+              !If [PushToOpenSearchCondition, !GetAtt PlayerLogsESDeliveryStream.Arn, !GetAtt PlayerLogsDeliveryStream.Arn]
             RoleARN: !GetAtt KinesisAnalyticsRole.Arn
 
   PlayerSummaryApplication:
@@ -1074,7 +1074,7 @@ Resources:
       DeploymentId: !Ref EventIngestApiDeployment
       StageName: prod
       Variables:
-        DeliveryStreamName : !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]
+        DeliveryStreamName : !If [PushToOpenSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]
 
   EventIngestApiPOST:
     Type: AWS::ApiGateway::Method
@@ -1190,7 +1190,7 @@ Resources:
           #     #end
           #     #set($output = "$output]}")
           #     $output
-          - {DeliveryStreamName: !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
+          - {DeliveryStreamName: !If [PushToOpenSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
       ResourceId: !Ref EventIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
@@ -1424,7 +1424,7 @@ Resources:
               #end
               #set($output = "$output]}")
               $output
-          - {DeliveryStreamName: !If [PushToElasticSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
+          - {DeliveryStreamName: !If [PushToOpenSearchCondition,!Ref PlayerLogsESDeliveryStream,!Ref PlayerLogsDeliveryStream]}
       ResourceId: !Ref EventBridgeIngestApiResource
       RestApiId: !Ref EventIngestApi
       MethodResponses:
@@ -1532,7 +1532,7 @@ Outputs:
   sendQoSEventUrl:
     Value: !Sub https://${EventIngestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/streams
   DeliveryStreamName:
-    Value: !If [PushToElasticSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream ]
+    Value: !If [PushToOpenSearchCondition, !Ref PlayerLogsESDeliveryStream, !Ref PlayerLogsDeliveryStream ]
   PlaybackURL:
     Value: !Ref PlaybackURL
   DeliveryRoleArn:

@@ -1,4 +1,4 @@
-.PHONY: all build package copycodeww copytemplateww creates3 deletes3 deploy quick
+.PHONY: all build package copycodeww copytemplateww creates3 deletes3 deploy deployw quick
 
 # set bucket name prefix to be created
 bucket = <ENTER S3 BUCKET NAME TO HOLD DEPLOYMENT ARTIFACTS>
@@ -15,8 +15,8 @@ stack_name = ivsqos$(version)
 docker_image = ivsqos$(version)
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
 playback_url = <Enter playback URL>
-# Set the ElasticSearch ARN here
-es_arn = <Enter ARN for ElasticSearch>
+# Set the OpenSearch ARN here
+opensearch_arn = <Enter ARN for OpenSearch>
 all: clean image build package copycodeww copytemplateww
 
 image:
@@ -75,10 +75,22 @@ distpackage:
 		aws cloudformation package --template-file templates/deployment_package.yaml --s3-bucket $(bucket)-$$region --s3-prefix deploy/lambda-functions --output-template-file templates/deployment.yaml --profile $(profile); \
 
 deploy:
-	aws cloudformation deploy --template-file templates/deployment.yaml \
-	--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $(regions) \
-	--s3-bucket $(bucket)-$(regions) \
-	--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn} \
+	@for region in $(regions);do \
+		echo $$region; echo $(bucket); \
+		aws cloudformation deploy --template-file templates/deployment.yaml \
+		--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $$region \
+		--s3-bucket $(bucket)-$$region \
+		--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url}; \
+	done
+
+deployw:
+	@for region in $(regions);do \
+		echo $$region; echo $(bucket); \
+		aws cloudformation deploy --template-file templates/deployment.yaml \
+		--stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $$region \
+		--s3-bucket $(bucket)-$$region \
+		--parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToOpenSearch=true OpenSearchDomainArn=${opensearch_arn}; \
+	done
 
 clean:
 	rm -rf dist/*
