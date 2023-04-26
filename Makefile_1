@@ -1,4 +1,4 @@
-.PHONY: all build package copycodeww copytemplateww creates3 deletes3 deploy quick
+.PHONY: all build package copycodeww copytemplateww creates3 deletes3 deploy deployw quick
 
 # set bucket name prefix to be created
 bucket = ganeshji-sfqos
@@ -15,8 +15,8 @@ stack_name = ivsqos$(version)
 docker_image = ivsqos$(version)
 # Version details for the deployment. This would be used to upload deployment assets into the version folder in S3 bucket
 playback_url = https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.xhP3ExfcX8ON.m3u8
-# Set the ElasticSearch ARN here
-es_arn = "<Enter ARN for ElasticSearch>"
+# Set the OpenSearch ARN here
+opensearch_arn = "<Enter ARN for OpenSearch>"
 
 all: clean image build package copycodeww copytemplateww deploy
 
@@ -78,7 +78,14 @@ distpackage:
 deploy:
 	@for region in $(regions);do \
 		echo $$region; echo $(bucket); \
-		aws cloudformation deploy --template-file templates/deployment.yaml --s3-bucket $(bucket)-$$region --stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $$region --parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToElasticSearch=false ElasticSearchDomainArn=${es_arn}; \
+		aws cloudformation deploy --template-file templates/deployment.yaml --s3-bucket $(bucket)-$$region --stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $$region --parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url}; \
+	done
+
+deployw:
+	@for region in $(regions);do \
+		echo $$region; echo $(bucket); \
+		aws cloudformation deploy --template-file templates/deployment.yaml --s3-bucket $(bucket)-$$region --stack-name $(stack_name) --capabilities=CAPABILITY_NAMED_IAM --profile $(profile) --region $$region --parameter-overrides DeployDemoUI=true PlaybackURL=${playback_url} PushToOpenSearch=true OpenSearchDomainArn=${opensearch_arn}; \
+	done
 
 clean:
 	rm -rf dist/*

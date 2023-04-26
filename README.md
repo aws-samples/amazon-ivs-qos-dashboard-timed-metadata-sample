@@ -8,7 +8,7 @@ Captured metrics are delivered to AWS via API Gateway and Kinesis Firehose. Kine
 
 * A Data Lake built on Amazon S3 and integrated with AWS Glue and Athena. Data stored in this location can be visualized using Amazon QuickSight.
 * Real time sliding window analysis is performed by Amazon Kinesis Analytics. Metrics calculated by this application are delivered to CloudWatch as metrics which can be used for operational dashboards and monitoring.
-* Optionally, metrics can also be delivered to an AWS ElasticSearch cluster for both near-real time and long-tail analysis using Kibana.
+* Optionally, metrics can also be delivered to an Amazon OpenSearch cluster for both near-real time and long-tail analysis using Kibana.
 
 ## Deployment
 
@@ -32,9 +32,9 @@ aws ivs get-channel --arn [channel ARN]
 9. Start streaming to your IVS stream and open the demo app. The URL for the demo app is output as PlayerURL by the CloudFormation stack.
 10. Metrics will be captured and will be visible under CloudWatch within a few minutes
 
-### Enabling ElasticSearch
+### Enabling OpenSearch
 
-1. To configure delivery of metrics to ElasticSearch, please see the [ElasticSearch Guide](./docs/elasticsearch.md)
+1. To configure delivery of metrics to OpenSearch, please see the [OpenSearch Guide](./docs/opensearch.md)
 
 ## Launching solution with Pre-built AWS CloudFormation Template
 
